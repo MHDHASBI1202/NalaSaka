@@ -2,6 +2,7 @@ package com.example.nalasaka.data.remote.retrofit
 
 import com.example.nalasaka.data.remote.response.AllSakaResponse
 import com.example.nalasaka.data.remote.response.DetailSakaResponse
+import com.example.nalasaka.data.remote.response.ProfileResponse
 import com.example.nalasaka.data.remote.response.ResponseSaka
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -46,4 +47,9 @@ interface ApiService {
         @Part("description") description: RequestBody,
         @Part("price") price: RequestBody // Price as RequestBody
     ): ResponseSaka
+    // --- TAMBAHAN UNTUK MODUL PROFIL ---
+    @GET("user/profile")
+    suspend fun getUserProfile(
+        @Header("Authorization") token: String
+    ): ProfileResponse
 }

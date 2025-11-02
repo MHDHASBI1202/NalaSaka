@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class HomeViewModel(private val repository: UserRepository) : ViewModel() {
+class HomeViewModel(val repository: UserRepository) : ViewModel() {
 
     private val _sakaState = MutableStateFlow<UiState<List<SakaItem>>>(UiState.Idle)
     val sakaState: StateFlow<UiState<List<SakaItem>>> = _sakaState.asStateFlow()

@@ -10,6 +10,12 @@ sealed class Screen(val route: String) {
     object Home : Screen("home")
     object AddSaka : Screen("addsaka") // Untuk Upload Foto Barang
 
+    // --- TAMBAHAN UNTUK MODUL PRODUK ---
+    object Produk : Screen("produk_nav")
+
+    // --- TAMBAHAN UNTUK MODUL PROFIL ---
+    object Profile : Screen("profile")
+
     // Rute Detail Produk (Memerlukan argumen ID)
     object Detail : Screen("detail/{sakaId}") {
         fun createRoute(sakaId: String) = "detail/$sakaId"

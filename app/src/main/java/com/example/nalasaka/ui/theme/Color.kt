@@ -20,4 +20,6 @@ val DarkBackground = Color(0xFF1C1B1F)
 // Sisanya diserahkan ke Compose default
 val Pink40 = Color(0xFF7D5260)
 val Pink80 = Color(0xFFEFB8C8)
+val WelcomeGradientStart = Color(0xFFFFCC80) // Warna Oranye Muda
+val WelcomeGradientEnd = Color(0xFFE69138)
 // ... (Warna default lain yang mungkin tidak terpakai bisa dihapus atau dipertahankan)

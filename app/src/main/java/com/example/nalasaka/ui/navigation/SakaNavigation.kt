@@ -11,10 +11,12 @@ import com.example.nalasaka.ui.screen.addsaka.AddSakaScreen // Belum dibuat, aka
 import com.example.nalasaka.ui.screen.detail.DetailScreen // Belum dibuat
 import com.example.nalasaka.ui.screen.home.HomeScreen // Belum dibuat
 import com.example.nalasaka.ui.screen.login.LoginScreen // Belum dibuat
+import com.example.nalasaka.ui.screen.produk.ProductScreen
 import com.example.nalasaka.ui.screen.register.RegisterScreen // Belum dibuat
 import com.example.nalasaka.ui.screen.welcome.WelcomeScreen // Belum dibuat
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.nalasaka.ui.screen.profile.ProfileScreen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
 
 @Composable
@@ -63,9 +65,24 @@ fun SakaNavigation(
             )
         }
 
+        // --- TAMBAHAN: PRODUK SCREEN ---
+        composable(Screen.Produk.route) {
+            ProductScreen(
+                navController = navController,
+                viewModel = viewModel(factory = factory)
+            )
+        }
+
         // 5. ADD SAKA SCREEN (UPLOAD FOTO BARANG)
         composable(Screen.AddSaka.route) {
             AddSakaScreen(
+                navController = navController,
+                viewModel = viewModel(factory = factory)
+            )
+        }
+        // --- TAMBAHAN UNTUK MODUL PROFIL ---
+        composable(Screen.Profile.route) {
+            ProfileScreen(
                 navController = navController,
                 viewModel = viewModel(factory = factory)
             )

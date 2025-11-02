@@ -69,3 +69,35 @@ data class DetailSakaResponse(
     @field:SerializedName("saka")
     val saka: SakaItem
 )
+// Data class untuk Detail Profil Pengguna
+data class ProfileData(
+    @field:SerializedName("userId")
+    val userId: String,
+
+    @field:SerializedName("name")
+    val name: String,
+
+    @field:SerializedName("email")
+    val email: String,
+
+    @field:SerializedName("photoUrl")
+    val photoUrl: String? = null, // Opsional
+
+    @field:SerializedName("phoneNumber")
+    val phoneNumber: String? = null, // Data tambahan
+
+    @field:SerializedName("address")
+    val address: String? = null // Data tambahan
+)
+
+// Response untuk Mendapatkan Detail Profil Pengguna
+data class ProfileResponse(
+    @field:SerializedName("error")
+    val error: Boolean,
+
+    @field:SerializedName("message")
+    val message: String,
+
+    @field:SerializedName("user")
+    val user: ProfileData
+)

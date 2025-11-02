@@ -27,6 +27,10 @@ class ViewModelFactory(private val repository: UserRepository) : ViewModelProvid
             modelClass.isAssignableFrom(AddSakaViewModel::class.java) -> {
                 AddSakaViewModel(repository) as T
             }
+            // --- TAMBAHAN UNTUK MODUL PROFIL ---
+            modelClass.isAssignableFrom(ProfileViewModel::class.java) -> {
+                ProfileViewModel(repository) as T
+            }
             // Tambahan: ViewModel untuk fitur spesifik seperti Wishlist, Rating, dll.
             // ...
 
