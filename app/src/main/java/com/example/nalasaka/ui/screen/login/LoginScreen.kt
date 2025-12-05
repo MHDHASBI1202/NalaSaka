@@ -54,7 +54,7 @@ fun LoginScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Login Pengguna", color = MaterialTheme.colorScheme.onPrimary) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary), // Burnt Orangeish
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary), // <--- PERUBAHAN DI SINI: Deep Moss
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
@@ -85,7 +85,8 @@ fun LoginScreen(
             PrimaryButton(
                 text = "LOGIN",
                 onClick = { if (validateAuthInput(email, password, { emailError = it }, { passwordError = it })) { viewModel.login(email, password) } },
-                isLoading = loginState is UiState.Loading
+                isLoading = loginState is UiState.Loading,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary) // Deep Moss
             )
 
             Spacer(modifier = Modifier.height(16.dp))

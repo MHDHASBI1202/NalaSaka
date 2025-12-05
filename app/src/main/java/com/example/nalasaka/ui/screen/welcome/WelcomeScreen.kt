@@ -74,10 +74,13 @@ fun WelcomeScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // Tombol Login (Menggunakan Primary: Burnt Orangeish)
+        // Tombol Login (Sekarang Menggunakan Secondary: Deep Moss)
         PrimaryButton(
             text = "LOGIN",
-            onClick = { navController.navigate(Screen.Login.route) }
+            onClick = { navController.navigate(Screen.Login.route) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary // Deep Moss
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))

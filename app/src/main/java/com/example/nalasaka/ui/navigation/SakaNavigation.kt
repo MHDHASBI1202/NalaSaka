@@ -13,6 +13,7 @@ import com.example.nalasaka.ui.screen.home.HomeScreen // Belum dibuat
 import com.example.nalasaka.ui.screen.login.LoginScreen // Belum dibuat
 import com.example.nalasaka.ui.screen.register.RegisterScreen // Belum dibuat
 import com.example.nalasaka.ui.screen.welcome.WelcomeScreen // Belum dibuat
+import com.example.nalasaka.ui.screen.profile.ProfileScreen
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
@@ -82,6 +83,11 @@ fun SakaNavigation(
                 navController = navController,
                 viewModel = viewModel(factory = factory)
             )
+        }
+
+        // 7. PROFILE SCREEN
+        composable(Screen.Profile.route) {
+        ProfileScreen(navController = navController)
         }
     }
 }

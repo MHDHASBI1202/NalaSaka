@@ -98,7 +98,7 @@ fun AddSakaScreen(
     LaunchedEffect(uploadState) {
         when (val state = uploadState) {
             is UiState.Success -> {
-                snackbarHostState.showSnackbar("Produk berhasil diunggah!")
+                snackbarHostState.showSnackbar("Pendaftaran berhasil! Silakan Login.", duration = SnackbarDuration.Long)
                 viewModel.resetUploadState()
                 navController.popBackStack() // Kembali ke Home
             }
@@ -129,6 +129,7 @@ fun AddSakaScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally, // <--- PERUBAHAN UTAMA: Menambah alignment di tengah
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Area Pemilihan Foto (Gallery)
@@ -187,6 +188,8 @@ fun AddSakaScreen(
 
             // Input Deskripsi Produk
             CustomTextField(value = description, onValueChange = { description = it; descriptionError = null }, label = "Deskripsi Produk", maxLines = 5, isError = descriptionError != null, errorMessage = descriptionError)
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Tombol Unggah
             PrimaryButton(
