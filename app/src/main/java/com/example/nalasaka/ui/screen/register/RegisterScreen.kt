@@ -54,7 +54,7 @@ fun RegisterScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Daftar Pengguna Baru", color = MaterialTheme.colorScheme.onPrimary) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary), // Burnt Orangeish
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary), // <--- PERUBAHAN DI SINI: Deep Moss
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
@@ -90,7 +90,8 @@ fun RegisterScreen(
                         viewModel.register(name, email, password)
                     }
                 },
-                isLoading = registerState is UiState.Loading
+                isLoading = registerState is UiState.Loading,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary) // Deep Moss
             )
 
             Spacer(modifier = Modifier.height(16.dp))
