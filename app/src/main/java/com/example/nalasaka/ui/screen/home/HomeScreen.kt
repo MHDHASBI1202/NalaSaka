@@ -25,13 +25,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.nalasaka.R // Import R
-import com.example.nalasaka.ui.components.SakaItem // Gunakan SakaItem yang ada
+import com.example.nalasaka.ui.components.SakaItem
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
 import com.example.nalasaka.ui.viewmodel.HomeViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
-import com.example.nalasaka.data.remote.response.SakaItem as SakaData // Alias untuk menghindari konflik nama
+import com.example.nalasaka.data.remote.response.SakaItem as SakaData
 
 @Composable
 fun HomeScreen(

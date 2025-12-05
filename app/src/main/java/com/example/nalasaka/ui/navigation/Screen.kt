@@ -22,6 +22,5 @@ sealed class Screen(val route: String) {
     }
 
     // Anda bisa tambahkan rute untuk modul Reputasi & Analisis di sini,
-    // misalnya:
-    // object Dashboard: Screen("dashboard")
+    // misalnya: object Dashboard: Screen("dashboard")
 }

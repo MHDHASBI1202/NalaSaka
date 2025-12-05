@@ -115,7 +115,6 @@ fun WelcomeScreen(
             PrimaryButton(
                 text = "LOGIN",
                 onClick = { navController.navigate(Screen.Login.route) },
-                // Ubah warna teks tombol menjadi hitam (onPrimary)
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
                     contentColor = MaterialTheme.colorScheme.primary
