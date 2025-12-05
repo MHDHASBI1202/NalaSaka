@@ -30,11 +30,11 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.nalasaka.ui.components.PrimaryButton
 import com.example.nalasaka.ui.navigation.Screen
-import com.example.nalasaka.ui.viewmodel.AuthViewModel // Menggunakan AuthViewModel untuk Logout
+import com.example.nalasaka.ui.viewmodel.AuthViewModel
 import com.example.nalasaka.ui.viewmodel.ProfileViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
-import com.example.nalasaka.data.remote.response.ProfileData // Import ProfileData
+import com.example.nalasaka.data.remote.response.ProfileData
 
 // --- Mock Data Tambahan untuk Statistik ---
 data class ProfileStats(val following: Int, val products: Int, val followers: Int)
