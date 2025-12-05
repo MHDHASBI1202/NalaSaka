@@ -3,12 +3,14 @@ package com.example.nalasaka.data.repository
 import com.example.nalasaka.data.pref.UserModel
 import com.example.nalasaka.data.pref.UserPreference
 import com.example.nalasaka.data.remote.response.AllSakaResponse
+import com.example.nalasaka.data.remote.response.CheckoutResponse
 import com.example.nalasaka.data.remote.response.DetailSakaResponse
 import com.example.nalasaka.data.remote.response.LoginResult
 import com.example.nalasaka.data.remote.response.ResponseSaka
 import com.example.nalasaka.data.remote.response.SakaItem
 import com.example.nalasaka.data.remote.response.ProfileResponse // Import baru
 import com.example.nalasaka.data.remote.response.ProfileData
+import com.example.nalasaka.data.remote.response.TransactionHistoryResponse
 import com.example.nalasaka.data.remote.retrofit.ApiService
 import kotlinx.coroutines.flow.Flow
 import okhttp3.MultipartBody
@@ -125,6 +127,17 @@ class UserRepository private constructor(
         }
         return apiService.addNewSaka("Bearer $token", file, name, description, price)
     }
+
+    // --- MODUL TRANSAKSI ---
+
+    suspend fun getTransactionHistory(token: String, userId: String): TransactionHistoryResponse {
+        return apiService.getTransactionHistory("Bearer $token", userId)
+    }
+
+    suspend fun checkout(token: String, userId: String, sakaId: String, quantity: Int): CheckoutResponse {
+        return apiService.checkoutTransaction("Bearer $token", userId, sakaId, quantity)
+    }
+
 
     // --- TAMBAHAN UNTUK MODUL PROFIL ---
     suspend fun getUserProfile(token: String): ProfileResponse {
