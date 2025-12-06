@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.nalasaka.data.remote.response.ResponseSaka
 import com.example.nalasaka.data.repository.UserRepository
 import com.example.nalasaka.data.pref.UserModel
-import kotlinx.coroutines.flow.Flow // Tambahkan import ini
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,11 +39,21 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    fun register(name: String, email: String, password: String) {
+    // Fungsi Register yang diperbarui dengan semua parameter baru
+    fun register(
+        name: String,
+        email: String,
+        password: String,
+        phoneNumber: String, // Parameter baru
+        address: String,     // Parameter baru
+        isSeller: Boolean    // Parameter baru
+    ) {
         viewModelScope.launch {
             _registerState.value = UiState.Loading
             try {
-                val response = repository.register(name, email, password)
+                // Memanggil fungsi repository dengan semua parameter baru
+                val response = repository.register(name, email, password, phoneNumber, address, isSeller)
+
                 if (!response.error) {
                     _registerState.value = UiState.Success(response)
                 } else {

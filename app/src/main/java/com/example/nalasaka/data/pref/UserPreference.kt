@@ -20,6 +20,7 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
     private val NAME_KEY = stringPreferencesKey("name")
     private val TOKEN_KEY = stringPreferencesKey("token")
     private val IS_LOGIN_KEY = booleanPreferencesKey("is_login")
+    private val IS_SELLER_KEY = booleanPreferencesKey("is_seller") // NEW: Kunci untuk status penjual
 
     // Mendapatkan model user sebagai Flow
     fun getUser(): Flow<UserModel> {
@@ -28,18 +29,20 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
                 preferences[USER_ID_KEY] ?: "",
                 preferences[NAME_KEY] ?: "",
                 preferences[TOKEN_KEY] ?: "",
-                preferences[IS_LOGIN_KEY] ?: false
+                preferences[IS_LOGIN_KEY] ?: false,
+                preferences[IS_SELLER_KEY] ?: false // NEW: Ambil status isSeller
             )
         }
     }
 
-    // Menyimpan sesi User (Login)
+    // Menyimpan sesi User (Login/Update Status)
     suspend fun saveUser(user: UserModel) {
         dataStore.edit { preferences ->
             preferences[USER_ID_KEY] = user.userId
             preferences[NAME_KEY] = user.name
             preferences[TOKEN_KEY] = user.token
-            preferences[IS_LOGIN_KEY] = true // Set isLogin ke true
+            preferences[IS_LOGIN_KEY] = user.isLogin // Gunakan nilai dari model
+            preferences[IS_SELLER_KEY] = user.isSeller // NEW: Simpan status isSeller
         }
     }
 
@@ -49,7 +52,8 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
             preferences[USER_ID_KEY] = ""
             preferences[NAME_KEY] = ""
             preferences[TOKEN_KEY] = ""
-            preferences[IS_LOGIN_KEY] = false // Set isLogin ke false
+            preferences[IS_LOGIN_KEY] = false
+            preferences[IS_SELLER_KEY] = false // NEW: Reset status isSeller
         }
     }
 

@@ -9,12 +9,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext // Import LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions // Import KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.nalasaka.ui.components.CustomTextField
+import com.example.nalasaka.ui.components.MyTextField // DIGANTI: MyTextField untuk Email
+import com.example.nalasaka.ui.components.PasswordTextField // PasswordTextField sudah ada di impor
 import com.example.nalasaka.ui.components.PrimaryButton
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
@@ -25,8 +28,11 @@ import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 @Composable
 fun LoginScreen(
     navController: NavHostController,
-    viewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
+    // FIX: Gunakan LocalContext untuk inisialisasi ViewModel
+    val context = LocalContext.current
+    val viewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(context))
+
     val loginState by viewModel.loginState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -54,7 +60,7 @@ fun LoginScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Login Pengguna", color = MaterialTheme.colorScheme.onPrimary) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary), // <--- PERUBAHAN DI SINI: Deep Moss
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary), // Deep Moss
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
@@ -77,14 +83,30 @@ fun LoginScreen(
             Text(text = "Masuk ke Akun Anda", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(32.dp))
 
-            CustomTextField(value = email, onValueChange = { email = it; emailError = null }, label = "Email", keyboardType = KeyboardType.Email, isError = emailError != null, errorMessage = emailError)
-            CustomTextField(value = password, onValueChange = { password = it; passwordError = null }, label = "Password (min 8 karakter)", keyboardType = KeyboardType.Password, isError = passwordError != null, errorMessage = passwordError)
+            // FIX: Menggunakan MyTextField dan KeyboardOptions
+            MyTextField(
+                value = email,
+                onValueChange = { email = it; emailError = null }, // 'it' aman di sini
+                label = "Email",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                isError = emailError != null,
+                errorMessage = emailError
+            )
+
+            // FIX: Menggunakan PasswordTextField
+            PasswordTextField(
+                value = password,
+                onValueChange = { password = it; passwordError = null }, // 'it' aman di sini
+                label = "Password (min 8 karakter)",
+                isError = passwordError != null,
+                errorMessage = passwordError
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             PrimaryButton(
                 text = "LOGIN",
-                onClick = { if (validateAuthInput(email, password, { emailError = it }, { passwordError = it })) { viewModel.login(email, password) } },
+                onClick = { if (validateAuthInput(email, password, { emailError = it ?: "" }, { passwordError = it ?: "" })) { viewModel.login(email, password) } },
                 isLoading = loginState is UiState.Loading,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary) // Deep Moss
             )
@@ -101,10 +123,19 @@ fun LoginScreen(
     }
 }
 
-// Fungsi validasi ditempatkan di luar Composable
-private fun validateAuthInput(email: String, password: String, onEmailError: (String) -> Unit, onPasswordError: (String) -> Unit): Boolean {
+// Fungsi validasi dipertahankan
+private fun validateAuthInput(email: String, password: String, onEmailError: (String?) -> Unit, onPasswordError: (String?) -> Unit): Boolean {
     var isValid = true
-    if (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) { onEmailError("Email tidak valid"); isValid = false }
-    if (password.isBlank() || password.length < 8) { onPasswordError("Password minimal 8 karakter"); isValid = false }
+    onEmailError(null)
+    onPasswordError(null)
+
+    if (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        onEmailError("Email tidak valid");
+        isValid = false
+    }
+    if (password.isBlank() || password.length < 8) {
+        onPasswordError("Password minimal 8 karakter");
+        isValid = false
+    }
     return isValid
 }

@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext // Import LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -25,34 +26,37 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.nalasaka.R // Import R
-import com.example.nalasaka.ui.components.SakaItem
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
-import com.example.nalasaka.ui.viewmodel.HomeViewModel
+import com.example.nalasaka.ui.viewmodel.HomeViewModel // Import HomeViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
-import com.example.nalasaka.ui.viewmodel.ViewModelFactory
+import com.example.nalasaka.ui.viewmodel.ViewModelFactory // Import ViewModelFactory
 import com.example.nalasaka.data.remote.response.SakaItem as SakaData
 
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    authViewModel: AuthViewModel,
-    viewModel: HomeViewModel
+    authViewModel: AuthViewModel
 ) {
-    val sakaState by viewModel.sakaState.collectAsState()
-    val userModel by authViewModel.userSession.collectAsState(
-        initial = com.example.nalasaka.data.pref.UserModel("", "", "", false)
+    // 1. Instansiasi HomeViewModel
+    val homeViewModel: HomeViewModel = viewModel(
+        factory = ViewModelFactory.getInstance(LocalContext.current)
     )
 
-    LaunchedEffect(userModel.isLogin) {
-        if (userModel.isLogin) {
-            viewModel.loadSaka(userModel.token)
+    // 2. Ambil state dari ViewModel yang baru diinstansiasi
+    val sakaState by homeViewModel.sakaState.collectAsState()
+    val userModel by authViewModel.userSession.collectAsState(
+        initial = com.example.nalasaka.data.pref.UserModel("", "", "", false, false) // Tambahkan isSeller default
+    )
+
+    // 3. LaunchedEffect diperbaiki untuk menggunakan homeViewModel
+    LaunchedEffect(userModel.isLogin, userModel.token) {
+        if (userModel.isLogin && userModel.token.isNotBlank()) {
+            homeViewModel.loadSaka(userModel.token)
         } else {
             navController.navigate(Screen.Welcome.route) { popUpTo(Screen.Home.route) { inclusive = true } }
         }
     }
-
-    // Hapus Scaffold di sini
 
     // Placeholder untuk Search
     var searchText by remember { mutableStateOf("") }
@@ -71,7 +75,7 @@ fun HomeScreen(
                     searchText = searchText,
                     onSearchTextChange = { searchText = it },
                     onSearch = { /* TODO: Implementasi Search */ },
-                    onRefresh = { viewModel.loadSaka(userModel.token) }
+                    onRefresh = { homeViewModel.loadSaka(userModel.token) } // Gunakan homeViewModel
                 )
             }
 
@@ -121,6 +125,8 @@ fun HomeScreen(
         }
     }
 }
+
+// ... (Komponen pendukung HomeHeader, ProductCategorySection, SakaCardHorizontal, SakaItemImagePlaceholder dipertahankan)
 
 @Composable
 fun HomeHeader(

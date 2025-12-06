@@ -1,12 +1,12 @@
 package com.example.nalasaka.ui.components
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,56 +19,68 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 
+// Komponen TextField standar (disesuaikan jika sudah ada)
 @Composable
-fun CustomTextField(
+fun MyTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    keyboardType: KeyboardType = KeyboardType.Text,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    leadingIcon: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
-    errorMessage: String? = null,
-    // --- TAMBAHKAN PARAMETER INI ---
-    maxLines: Int = 1 // Default 1 baris
-    // -----------------------------
+    errorMessage: String? = null
 ) {
-    val isPasswordField = keyboardType == KeyboardType.Password
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = modifier.fillMaxWidth(),
+        keyboardOptions = keyboardOptions,
+        leadingIcon = leadingIcon,
+        isError = isError,
+        supportingText = if (isError && errorMessage != null) {
+            { Text(errorMessage) }
+        } else null
+    )
+}
 
+// Komponen baru untuk Password dengan tombol mata
+@Composable
+fun PasswordTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false,
+    errorMessage: String? = null
+) {
     var passwordVisible by remember { mutableStateOf(false) }
-
-    // Tentukan VisualTransformation
-    val visualTransformation = if (isPasswordField) {
-        if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()
-    } else {
-        VisualTransformation.None
-    }
 
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        visualTransformation = visualTransformation,
-        isError = isError,
-        // --- GUNAKAN PARAMETER INI ---
-        singleLine = !isPasswordField && maxLines == 1,
-        maxLines = maxLines,
-        // -----------------------------
+        modifier = modifier.fillMaxWidth(),
+        // Gunakan KeyboardType.Password untuk input yang lebih baik
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        // Toggle visual transformation berdasarkan state
+        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
-            if (isPasswordField) {
-                val iconImage = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                val description = if (passwordVisible) "Hide password" else "Show password"
+            val image = if (passwordVisible)
+                Icons.Filled.Visibility
+            else Icons.Filled.VisibilityOff
 
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = iconImage, contentDescription = description)
-                }
+            val description = if (passwordVisible) "Hide password" else "Show password"
+
+            // Tombol mata
+            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                Icon(imageVector = image, contentDescription = description)
             }
         },
-        supportingText = {
-            if (isError && errorMessage != null) {
-                Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
-            }
-        },
-        modifier = modifier
+        isError = isError,
+        supportingText = if (isError && errorMessage != null) {
+            { Text(errorMessage) }
+        } else null
     )
 }
