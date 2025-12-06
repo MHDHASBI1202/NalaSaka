@@ -51,8 +51,9 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
         viewModelScope.launch {
             _registerState.value = UiState.Loading
             try {
+                val isSellerInt = if (isSeller) 1 else 0
                 // Memanggil fungsi repository dengan semua parameter baru
-                val response = repository.register(name, email, password, phoneNumber, address, isSeller)
+                val response = repository.register(name, email, password, phoneNumber, address, isSellerInt)
 
                 if (!response.error) {
                     _registerState.value = UiState.Success(response)

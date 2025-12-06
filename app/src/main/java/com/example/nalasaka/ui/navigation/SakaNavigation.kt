@@ -1,6 +1,13 @@
 package com.example.nalasaka.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -11,7 +18,6 @@ import androidx.navigation.navArgument
 import com.example.nalasaka.ui.screen.addsaka.AddSakaScreen
 import com.example.nalasaka.ui.screen.detail.DetailScreen
 import com.example.nalasaka.ui.screen.history.TransactionHistoryScreen
-import androidx.compose.ui.platform.LocalContext
 import com.example.nalasaka.ui.screen.home.HomeScreen
 import com.example.nalasaka.ui.screen.login.LoginScreen
 import com.example.nalasaka.ui.screen.produk.ProductScreen
@@ -21,7 +27,6 @@ import com.example.nalasaka.ui.screen.seller.SellerVerificationScreen
 import com.example.nalasaka.ui.screen.welcome.WelcomeScreen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
-import kotlinx.coroutines.launch
 
 @Composable
 fun SakaNavigation(
@@ -31,10 +36,46 @@ fun SakaNavigation(
 ) {
     val authViewModel: AuthViewModel = viewModel(factory = factory)
 
+    // 1. Amati status sesi pengguna (Flow)
+    // Gunakan null sebagai initial value untuk menunjukkan status loading/belum siap
+    val userSession by authViewModel.userSession.collectAsState(initial = null)
+
+    // 2. Tentukan rute awal berdasarkan status sesi
+    val startRoute: String? = remember(userSession) {
+        when (userSession) {
+            null -> {
+                // Saat status masih null (DataStore sedang loading), jangan tentukan rute
+                null
+            }
+            // Asumsi UserModel memiliki properti isLogin (dari AuthViewModel)
+            else -> {
+                if (userSession!!.isLogin) {
+                    Screen.Home.route
+                } else {
+                    Screen.Welcome.route
+                }
+            }
+        }
+    }
+
+    // 3. Tampilkan Loading saat startRoute masih null
+    if (startRoute == null) {
+        // Tampilkan loading screen/indicator di tengah layar
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        // Hentikan composable di sini, jangan render NavHost
+        return
+    }
+
+    // 4. Setelah startRoute ditentukan, render NavHost
     NavHost(
         modifier = modifier,
         navController = navController,
-        startDestination = Screen.Welcome.route // Titik mulai
+        startDestination = startRoute // Gunakan startRoute yang sudah ditentukan
     ) {
         // 1. WELCOME SCREEN
         composable(Screen.Welcome.route) {
@@ -84,7 +125,6 @@ fun SakaNavigation(
         composable(Screen.Profile.route) {
             ProfileScreen(
                 navController = navController,
-                // Parameter navigasi baru yang HARUS diterima oleh ProfileScreen
                 navigateToSellerVerification = { navController.navigate(Screen.SellerVerification.route) }
             )
         }
@@ -92,10 +132,8 @@ fun SakaNavigation(
         // Rute Baru: Seller Verification Screen
         composable(Screen.SellerVerification.route) {
             SellerVerificationScreen(
-                // Parameter navigasi yang HARUS diterima oleh SellerVerificationScreen
                 navigateBack = { navController.navigateUp() },
                 navigateToHome = {
-                    // Navigasi kembali ke Home setelah sukses, membersihkan back stack
                     navController.popBackStack(Screen.Home.route, inclusive = true)
                     navController.navigate(Screen.Home.route)
                 }

@@ -32,7 +32,7 @@ fun SellerVerificationScreen(
 
     // 3. Inisialisasi ViewModel menggunakan Factory dan Repository
     val viewModel: SellerViewModel = viewModel(
-        factory = ViewModelFactory(repository)
+    factory = ViewModelFactory.getInstance(LocalContext.current)
     )
 
     // 4. Akses data pengguna dari Repository yang sudah diinisialisasi

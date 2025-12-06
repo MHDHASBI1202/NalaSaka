@@ -45,7 +45,7 @@ class UserRepository private constructor(
         password: String,
         phoneNumber: String, // Baru
         address: String,     // Baru
-        isSeller: Boolean    // Baru
+        isSeller: Int    // Baru
     ): ResponseSaka {
         // Asumsi: Register tidak menggunakan mocking, langsung ke API
         val response = apiService.register(name, email, password, phoneNumber, address, isSeller)

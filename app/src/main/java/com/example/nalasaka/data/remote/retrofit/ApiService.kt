@@ -22,7 +22,7 @@ interface ApiService {
         @Field("password") password: String,
         @Field("phone_number") phoneNumber: String, // Baru: Nomor HP
         @Field("address") address: String,           // Baru: Alamat
-        @Field("is_seller") isSeller: Boolean        // Baru: Ingin langsung menjual
+        @Field("is_seller") isSeller: Int        // Baru: Ingin langsung menjual
     ): ResponseSaka
 
     @FormUrlEncoded
