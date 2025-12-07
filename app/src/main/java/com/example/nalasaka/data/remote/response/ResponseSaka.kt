@@ -10,12 +10,12 @@ data class ResponseSaka(
     @field:SerializedName("message")
     val message: String,
 
-    // Digunakan khusus untuk respons Login/Register
+    // Digunakan khusus untuk respons Login
     @field:SerializedName("loginResult")
     val loginResult: LoginResult? = null
 )
 
-// Data class untuk hasil Login/Register
+// Data class untuk hasil Login
 data class LoginResult(
     @field:SerializedName("name")
     val name: String,
@@ -24,10 +24,7 @@ data class LoginResult(
     val userId: String,
 
     @field:SerializedName("token")
-    val token: String,
-
-    @field:SerializedName("is_seller") // FIELD BARU: Status penjual
-    val isSeller: Boolean = false
+    val token: String
 )
 
 // Data class untuk satu item produk Tani
@@ -72,7 +69,6 @@ data class DetailSakaResponse(
     @field:SerializedName("saka")
     val saka: SakaItem
 )
-
 // Model untuk data Tracking (Lokasi & Resi)
 data class TrackingData(
     @field:SerializedName("location")
@@ -129,7 +125,6 @@ data class CheckoutResponse(
     @field:SerializedName("transaction_id")
     val transactionId: Int? = null
 )
-
 // Data class untuk Detail Profil Pengguna
 data class ProfileData(
     @field:SerializedName("userId")
@@ -148,10 +143,7 @@ data class ProfileData(
     val phoneNumber: String? = null, // Data tambahan
 
     @field:SerializedName("address")
-    val address: String? = null, // Data tambahan
-
-    @field:SerializedName("is_seller")
-    val isSeller: Boolean = false
+    val address: String? = null // Data tambahan
 )
 
 // Response untuk Mendapatkan Detail Profil Pengguna
@@ -164,17 +156,4 @@ data class ProfileResponse(
 
     @field:SerializedName("user")
     val user: ProfileData
-)
-
-// Response Baru: Untuk endpoint /user/become-seller
-data class BecomeSellerResponse(
-    @field:SerializedName("error")
-    val error: Boolean,
-
-    @field:SerializedName("message")
-    val message: String,
-
-    // Mengembalikan data user yang sudah diupdate (termasuk is_seller: true)
-    @field:SerializedName("user")
-    val user: ProfileData? = null
 )

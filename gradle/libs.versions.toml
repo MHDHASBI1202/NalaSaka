@@ -20,7 +20,6 @@ coilCompose = "2.6.0"
 pagingRuntimeKtx = "3.2.1"
 pagingCompose = "3.3.0-rc01"
 material3IconsExtended = "1.6.0"
-playServicesTfliteSupport = "16.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -49,7 +48,6 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtime-ktx", version.ref = "pagingRuntimeKtx" }
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "pagingCompose" }
 material3-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "material3IconsExtended" }
-play-services-tflite-support = { group = "com.google.android.gms", name = "play-services-tflite-support", version.ref = "playServicesTfliteSupport" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

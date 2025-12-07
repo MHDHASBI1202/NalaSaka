@@ -1,32 +1,25 @@
 package com.example.nalasaka.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.nalasaka.ui.screen.addsaka.AddSakaScreen
-import com.example.nalasaka.ui.screen.detail.DetailScreen
-import com.example.nalasaka.ui.screen.history.TransactionHistoryScreen
-import com.example.nalasaka.ui.screen.home.HomeScreen
-import com.example.nalasaka.ui.screen.login.LoginScreen
+import com.example.nalasaka.ui.screen.addsaka.AddSakaScreen // Belum dibuat, akan dibuat di D. Screens
+import com.example.nalasaka.ui.screen.detail.DetailScreen // Belum dibuat
+import com.example.nalasaka.ui.screen.home.HomeScreen // Belum dibuat
+import com.example.nalasaka.ui.screen.login.LoginScreen // Belum dibuat
 import com.example.nalasaka.ui.screen.produk.ProductScreen
+import com.example.nalasaka.ui.screen.register.RegisterScreen // Belum dibuat
+import com.example.nalasaka.ui.screen.welcome.WelcomeScreen // Belum dibuat
 import com.example.nalasaka.ui.screen.profile.ProfileScreen
-import com.example.nalasaka.ui.screen.register.RegisterScreen
-import com.example.nalasaka.ui.screen.seller.SellerVerificationScreen
-import com.example.nalasaka.ui.screen.welcome.WelcomeScreen
-import com.example.nalasaka.ui.viewmodel.AuthViewModel
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.nalasaka.ui.screen.history.TransactionHistoryScreen
+import com.example.nalasaka.ui.screen.profile.ProfileScreen
+import com.example.nalasaka.ui.viewmodel.AuthViewModel
 
 @Composable
 fun SakaNavigation(
@@ -36,46 +29,10 @@ fun SakaNavigation(
 ) {
     val authViewModel: AuthViewModel = viewModel(factory = factory)
 
-    // 1. Amati status sesi pengguna (Flow)
-    // Gunakan null sebagai initial value untuk menunjukkan status loading/belum siap
-    val userSession by authViewModel.userSession.collectAsState(initial = null)
-
-    // 2. Tentukan rute awal berdasarkan status sesi
-    val startRoute: String? = remember(userSession) {
-        when (userSession) {
-            null -> {
-                // Saat status masih null (DataStore sedang loading), jangan tentukan rute
-                null
-            }
-            // Asumsi UserModel memiliki properti isLogin (dari AuthViewModel)
-            else -> {
-                if (userSession!!.isLogin) {
-                    Screen.Home.route
-                } else {
-                    Screen.Welcome.route
-                }
-            }
-        }
-    }
-
-    // 3. Tampilkan Loading saat startRoute masih null
-    if (startRoute == null) {
-        // Tampilkan loading screen/indicator di tengah layar
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-        // Hentikan composable di sini, jangan render NavHost
-        return
-    }
-
-    // 4. Setelah startRoute ditentukan, render NavHost
     NavHost(
         modifier = modifier,
         navController = navController,
-        startDestination = startRoute // Gunakan startRoute yang sudah ditentukan
+        startDestination = Screen.Welcome.route // Titik mulai
     ) {
         // 1. WELCOME SCREEN
         composable(Screen.Welcome.route) {
@@ -88,60 +45,52 @@ fun SakaNavigation(
         // 2. LOGIN SCREEN
         composable(Screen.Login.route) {
             LoginScreen(
-                navController = navController
+                navController = navController,
+                viewModel = viewModel(factory = factory)
             )
         }
 
         // 3. REGISTER SCREEN
         composable(Screen.Register.route) {
             RegisterScreen(
-                navController = navController
+                navController = navController,
+                viewModel = viewModel(factory = factory)
             )
         }
 
-        // 4. HOME SCREEN
+        // 4. HOME SCREEN (MODUL PRODUK & PEMASARAN)
         composable(Screen.Home.route) {
             HomeScreen(
                 navController = navController,
-                authViewModel = authViewModel
+                authViewModel = authViewModel,
+                viewModel = viewModel(factory = factory)
             )
         }
 
         // --- TAMBAHAN: PRODUK SCREEN ---
         composable(Screen.Produk.route) {
             ProductScreen(
-                navController = navController
+                navController = navController,
+                viewModel = viewModel(factory = factory)
             )
         }
 
         // 5. ADD SAKA SCREEN (UPLOAD FOTO BARANG)
         composable(Screen.AddSaka.route) {
             AddSakaScreen(
-                navController = navController
+                navController = navController,
+                viewModel = viewModel(factory = factory)
             )
         }
-
-        // --- RUTE PROFIL & PENJUAL ---
+        // --- TAMBAHAN UNTUK MODUL PROFIL ---
         composable(Screen.Profile.route) {
             ProfileScreen(
                 navController = navController,
-                navigateToSellerVerification = { navController.navigate(Screen.SellerVerification.route) }
+                viewModel = viewModel(factory = factory)
             )
         }
 
-        // Rute Baru: Seller Verification Screen
-        composable(Screen.SellerVerification.route) {
-            SellerVerificationScreen(
-                navigateBack = { navController.navigateUp() },
-                navigateToHome = {
-                    navController.popBackStack(Screen.Home.route, inclusive = true)
-                    navController.navigate(Screen.Home.route)
-                }
-            )
-        }
-        // -----------------------------
-
-        // 6. DETAIL SCREEN
+        // 6. DETAIL SCREEN (Membutuhkan ID Produk)
         composable(
             route = Screen.Detail.route,
             arguments = listOf(navArgument("sakaId") { type = NavType.StringType })
@@ -149,14 +98,21 @@ fun SakaNavigation(
             val sakaId = it.arguments?.getString("sakaId") ?: return@composable
             DetailScreen(
                 sakaId = sakaId,
-                navController = navController
+                navController = navController,
+                viewModel = viewModel(factory = factory)
             )
         }
 
-        // 7. TRANSACTION HISTORY SCREEN
+        // 7. PROFILE SCREEN
+        composable(Screen.Profile.route) {
+        ProfileScreen(navController = navController)
+        }
+        // 8. TRANSACTION HISTORY SCREEN (Modul Transaksi & Logistik)
         composable(Screen.TransactionHistory.route) {
+            // Pastikan import TransactionHistoryScreen sudah ada
             TransactionHistoryScreen(
-                navController = navController
+                navController = navController,
+                viewModel = viewModel(factory = factory)
             )
         }
     }

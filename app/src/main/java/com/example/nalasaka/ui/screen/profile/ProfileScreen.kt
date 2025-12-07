@@ -1,6 +1,6 @@
 package com.example.nalasaka.ui.screen.profile
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Image // Import baru
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,8 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext // Import LocalContext untuk ViewModelFactory
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -34,32 +35,25 @@ import com.example.nalasaka.ui.viewmodel.ProfileViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import com.example.nalasaka.data.remote.response.ProfileData
-import kotlinx.coroutines.launch // Penting untuk scope.launch
 
 // --- Mock Data Tambahan untuk Statistik ---
 data class ProfileStats(val following: Int, val products: Int, val followers: Int)
 
-// Fungsi untuk mendapatkan ViewModel Auth (memperbaiki penggunaan Context)
+// Fungsi untuk mendapatkan ViewModel Auth
 @Composable
-fun getAuthViewModel(): AuthViewModel {
-    val context = LocalContext.current
-    return viewModel(factory = ViewModelFactory.getInstance(context))
+fun getAuthViewModel(navController: NavHostController): AuthViewModel {
+    return viewModel(factory = ViewModelFactory.getInstance(navController.context))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
-    navigateToSellerVerification: () -> Unit, // Parameter yang hilang telah ditambahkan
-    // Menggunakan LocalContext untuk inisialisasi Repository
-    viewModel: ProfileViewModel = viewModel(factory = ViewModelFactory.getInstance(LocalContext.current))
+    viewModel: ProfileViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
     val profileState by viewModel.profileState.collectAsState()
-    val authViewModel = getAuthViewModel()
+    val authViewModel = getAuthViewModel(navController)
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // FIX: Tambahkan CoroutineScope untuk memanggil fungsi suspend
-    val scope = rememberCoroutineScope()
 
     // Mock Data Statis
     val mockStats = ProfileStats(following = 5, products = 100, followers = 1500)
@@ -90,7 +84,7 @@ fun ProfileScreen(
         when (val state = profileState) {
             is UiState.Idle, UiState.Loading -> Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             is UiState.Success -> {
-                val profile = state.data // FIX: Menghilangkan .user
+                val profile = state.data
 
                 Column(
                     modifier = Modifier
@@ -100,51 +94,12 @@ fun ProfileScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 1. HEADER PROFIL
+                    // 1. HEADER PROFIL (DeepMoss Background)
                     ProfileHeader(profile = profile, stats = mockStats)
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 2. STATUS PENJUAL (Tampilkan di Card untuk detail)
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Status Akun",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = if (profile.isSeller) "Anda adalah Penjual NalaSaka." else "Anda adalah Pembeli NalaSaka.",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (profile.isSeller) MaterialTheme.colorScheme.secondary else Color.Gray
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 3. Tombol "Mulai Menjual" (Hanya muncul jika bukan penjual)
-                    if (!profile.isSeller) {
-                        TextButton(onClick = navigateToSellerVerification) { // FIX: Menggunakan parameter lambda
-                            Text(
-                                text = "Mulai Menjual",
-                                color = MaterialTheme.colorScheme.primary, // Burnt Orangeish
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 4. MENU Aksi (Dipertahankan)
+                    // 2. MENU Aksi
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -155,10 +110,8 @@ fun ProfileScreen(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             actionItems.forEach { label ->
                                 ProfileMenuItem(label = label) {
-                                    // FIX: Panggil showSnackbar di dalam CoroutineScope
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(message = "Navigasi ke $label")
-                                    }
+                                    // Aksi klik menu
+                                    // snackbarHostState.showSnackbar("Navigasi ke $label")
                                 }
                                 Divider(thickness = 0.5.dp, color = Color.LightGray)
                             }
@@ -167,16 +120,31 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // 5. LOG OUT BUTTON
+                    // 3. LOG OUT BUTTON (DeepMoss)
                     PrimaryButton(
                         text = "LOG OUT",
                         onClick = {
                             authViewModel.logout()
                             navController.navigate(Screen.Welcome.route) { popUpTo(Screen.Home.route) { inclusive = true } }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary), // Deep Moss
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 4. MULAI MENJUAL BUTTON (Link Tekstual - Burnt Orangeish)
+                    TextButton(onClick = {
+                        /* TODO: Implementasi aktivasi mode seller */
+                        // snackbarHostState.showSnackbar("Mengarahkan ke pendaftaran Seller")
+                    }) {
+                        Text(
+                            text = "Mulai Menjual",
+                            color = MaterialTheme.colorScheme.primary, // Burnt Orangeish
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(32.dp))
                 }
@@ -207,9 +175,13 @@ fun ProfileHeader(profile: ProfileData, stats: ProfileStats) {
                         contentDescription = profile.name,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        // --- PERBAIKAN DI SINI: Menggunakan rememberVectorPainter ---
                         error = rememberVectorPainter(Icons.Default.Person),
+                        // Jika Anda ingin icon terpusat di tengah dengan ukuran tetap (seperti 50.dp)
+                        // Anda juga dapat menambahkan placeholder dan fallback dengan cara yang sama:
                         placeholder = rememberVectorPainter(Icons.Default.Person),
                         fallback = rememberVectorPainter(Icons.Default.Person)
+                        // -----------------------------------------------------------
                     )
                 }
 
@@ -269,6 +241,6 @@ fun ProfileMenuItem(label: String, onClick: () -> Unit) {
         Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.width(16.dp))
         Text(text = label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = "Next", tint = Color.Gray, modifier = Modifier.size(16.dp))
+        Icon(Icons.Default.ArrowForwardIos, contentDescription = "Next", tint = Color.Gray, modifier = Modifier.size(16.dp))
     }
 }

@@ -1,7 +1,6 @@
 package com.example.nalasaka.data.remote.retrofit
 
 import com.example.nalasaka.data.remote.response.AllSakaResponse
-import com.example.nalasaka.data.remote.response.BecomeSellerResponse // NEW IMPORT
 import com.example.nalasaka.data.remote.response.CheckoutResponse
 import com.example.nalasaka.data.remote.response.DetailSakaResponse
 import com.example.nalasaka.data.remote.response.ProfileResponse
@@ -12,17 +11,12 @@ import okhttp3.RequestBody
 import retrofit2.http.*
 
 interface ApiService {
-
-    // Fungsi Register yang diperbarui dengan input baru
     @FormUrlEncoded
     @POST("register")
     suspend fun register(
         @Field("name") name: String,
         @Field("email") email: String,
-        @Field("password") password: String,
-        @Field("phone_number") phoneNumber: String, // Baru: Nomor HP
-        @Field("address") address: String,           // Baru: Alamat
-        @Field("is_seller") isSeller: Int        // Baru: Ingin langsung menjual
+        @Field("password") password: String
     ): ResponseSaka
 
     @FormUrlEncoded
@@ -81,13 +75,4 @@ interface ApiService {
     suspend fun getUserProfile(
         @Header("Authorization") token: String
     ): ProfileResponse
-
-    // NEW ENDPOINT: Untuk menjadi penjual (dipanggil setelah tekan 'mulai menjual')
-    @FormUrlEncoded
-    @POST("user/become-seller")
-    suspend fun becomeSeller(
-        @Field("name") name: String,
-        @Field("phone_number") phoneNumber: String,
-        @Field("address") address: String
-    ): BecomeSellerResponse
 }

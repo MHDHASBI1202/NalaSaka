@@ -31,12 +31,6 @@ class ViewModelFactory(private val repository: UserRepository) : ViewModelProvid
             modelClass.isAssignableFrom(TransactionViewModel::class.java) -> {
                 TransactionViewModel(repository) as T
             }
-
-            // Tambahkan entri untuk SellerViewModel di sini:
-            modelClass.isAssignableFrom(SellerViewModel::class.java) -> {
-                SellerViewModel(repository) as T
-            }
-
             // --- TAMBAHAN UNTUK MODUL PROFIL ---
             modelClass.isAssignableFrom(ProfileViewModel::class.java) -> {
                 ProfileViewModel(repository) as T

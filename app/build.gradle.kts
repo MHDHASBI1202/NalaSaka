@@ -60,7 +60,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.paging.runtime.ktx)
     implementation(libs.paging.compose)
-    implementation(libs.play.services.tflite.support)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
