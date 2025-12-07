@@ -17,7 +17,7 @@ sealed class BottomBarItem(val route: String, val icon: ImageVector, val label: 
     object Home : BottomBarItem(Screen.Home.route, Icons.Default.Home, "Home")
     object Produk : BottomBarItem("produk_nav", Icons.Default.Inventory2, "Produk")
     object Promo : BottomBarItem("promo_nav", Icons.Default.Discount, "Promo")
-    object Pesanan : BottomBarItem("transaction_history", Icons.Default.ReceiptLong, "Pesanan")
+    object Pesanan : BottomBarItem("pesanan_nav", Icons.Default.ReceiptLong, "Pesanan")
     object Profil : BottomBarItem(Screen.Profile.route, Icons.Default.Person, "Profil")
 }
 

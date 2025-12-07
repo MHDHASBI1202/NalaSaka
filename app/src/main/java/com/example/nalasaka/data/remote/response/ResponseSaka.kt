@@ -69,62 +69,6 @@ data class DetailSakaResponse(
     @field:SerializedName("saka")
     val saka: SakaItem
 )
-// Model untuk data Tracking (Lokasi & Resi)
-data class TrackingData(
-    @field:SerializedName("location")
-    val location: String,
-
-    @field:SerializedName("resi")
-    val resi: String
-)
-
-// Model untuk satu item Riwayat Transaksi
-data class TransactionItem(
-    @field:SerializedName("id")
-    val id: String,
-
-    @field:SerializedName("productName")
-    val productName: String,
-
-    @field:SerializedName("productImage")
-    val productImage: String,
-
-    @field:SerializedName("price")
-    val price: Int,
-
-    @field:SerializedName("status")
-    val status: String, // PENDING, DIPROSES, DIKIRIM, dll
-
-    @field:SerializedName("date")
-    val date: String,
-
-    @field:SerializedName("tracking")
-    val tracking: TrackingData
-)
-
-// Response untuk GET /api/transactions
-data class TransactionHistoryResponse(
-    @field:SerializedName("error")
-    val error: Boolean,
-
-    @field:SerializedName("message")
-    val message: String,
-
-    @field:SerializedName("history")
-    val history: List<TransactionItem>
-)
-
-// Response Sederhana untuk Checkout (POST)
-data class CheckoutResponse(
-    @field:SerializedName("error")
-    val error: Boolean,
-
-    @field:SerializedName("message")
-    val message: String,
-
-    @field:SerializedName("transaction_id")
-    val transactionId: Int? = null
-)
 // Data class untuk Detail Profil Pengguna
 data class ProfileData(
     @field:SerializedName("userId")

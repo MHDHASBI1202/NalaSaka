@@ -17,7 +17,6 @@ import com.example.nalasaka.ui.screen.welcome.WelcomeScreen // Belum dibuat
 import com.example.nalasaka.ui.screen.profile.ProfileScreen
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.nalasaka.ui.screen.history.TransactionHistoryScreen
 import com.example.nalasaka.ui.screen.profile.ProfileScreen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
 
@@ -106,14 +105,6 @@ fun SakaNavigation(
         // 7. PROFILE SCREEN
         composable(Screen.Profile.route) {
         ProfileScreen(navController = navController)
-        }
-        // 8. TRANSACTION HISTORY SCREEN (Modul Transaksi & Logistik)
-        composable(Screen.TransactionHistory.route) {
-            // Pastikan import TransactionHistoryScreen sudah ada
-            TransactionHistoryScreen(
-                navController = navController,
-                viewModel = viewModel(factory = factory)
-            )
         }
     }
 }

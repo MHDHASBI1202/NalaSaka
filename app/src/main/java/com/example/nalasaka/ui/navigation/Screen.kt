@@ -21,9 +21,6 @@ sealed class Screen(val route: String) {
         fun createRoute(sakaId: String) = "detail/$sakaId"
     }
 
-    // Rute untuk Riwayat Transaksi
-    object TransactionHistory : Screen("transaction_history")
-
     // Anda bisa tambahkan rute untuk modul Reputasi & Analisis di sini,
     // misalnya: object Dashboard: Screen("dashboard")
 }

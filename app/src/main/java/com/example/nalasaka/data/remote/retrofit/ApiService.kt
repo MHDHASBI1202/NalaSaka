@@ -1,11 +1,9 @@
 package com.example.nalasaka.data.remote.retrofit
 
 import com.example.nalasaka.data.remote.response.AllSakaResponse
-import com.example.nalasaka.data.remote.response.CheckoutResponse
 import com.example.nalasaka.data.remote.response.DetailSakaResponse
 import com.example.nalasaka.data.remote.response.ProfileResponse
 import com.example.nalasaka.data.remote.response.ResponseSaka
-import com.example.nalasaka.data.remote.response.TransactionHistoryResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
@@ -49,27 +47,6 @@ interface ApiService {
         @Part("description") description: RequestBody,
         @Part("price") price: RequestBody // Price as RequestBody
     ): ResponseSaka
-
-
-    // --- MODUL TRANSAKSI & LOGISTIK ---
-
-    // 1. Ambil Riwayat Transaksi
-    @GET("transactions")
-    suspend fun getTransactionHistory(
-        @Header("Authorization") token: String,
-        @Query("user_id") userId: String
-    ): TransactionHistoryResponse
-
-    // 2. Checkout / Pesan Barang
-    @FormUrlEncoded
-    @POST("transactions")
-    suspend fun checkoutTransaction(
-        @Header("Authorization") token: String,
-        @Field("user_id") userId: String,
-        @Field("saka_id") sakaId: String,
-        @Field("quantity") quantity: Int
-    ): CheckoutResponse
-
     // --- TAMBAHAN UNTUK MODUL PROFIL ---
     @GET("user/profile")
     suspend fun getUserProfile(
