@@ -15,7 +15,7 @@ class ApiConfig {
                 .build()
             val retrofit = Retrofit.Builder()
                 // !!! GANTI DENGAN BASE_URL API BACKEND ANDA !!!
-                .baseUrl("http://192.168.56.1/nalasaka-api/public/api/")
+                .baseUrl("http://192.168.1.9/nalasaka-api/public/api/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build()
