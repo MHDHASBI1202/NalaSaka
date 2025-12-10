@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -105,7 +106,11 @@ fun TransactionCard(transaction: TransactionItem, onReorder: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = transaction.date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(
+                    text = transaction.date,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
 
                 Surface(
                     color = getStatusColor(transaction.status),
@@ -137,19 +142,39 @@ fun TransactionCard(transaction: TransactionItem, onReorder: () -> Unit) {
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column {
-                    Text(text = transaction.productName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(text = "Total: Rp ${transaction.price}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = transaction.productName,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = "Total: Rp ${transaction.price}",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
 
-            Divider(modifier = Modifier.padding(vertical = 12.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 12.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
 
             // Pelacakan Lokasi (Fitur Logistik)
             Row(verticalAlignment = Alignment.Top) {
-                Text("Lokasi: ", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "Lokasi: ",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
                 Text(transaction.tracking.location, style = MaterialTheme.typography.bodySmall)
             }
-            Text("Resi: ${transaction.tracking.resi}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            Text(
+                "Resi: ${transaction.tracking.resi}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 

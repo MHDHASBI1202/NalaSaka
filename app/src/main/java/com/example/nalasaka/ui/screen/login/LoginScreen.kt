@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,6 +35,11 @@ fun LoginScreen(
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
 
+    // State untuk AlertDialog
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogTitle by remember { mutableStateOf("") }
+    var dialogMessage by remember { mutableStateOf("") }
+
     LaunchedEffect(loginState) {
         when (val state = loginState) {
             is UiState.Success -> {
@@ -44,20 +49,60 @@ fun LoginScreen(
                 }
             }
             is UiState.Error -> {
-                snackbarHostState.showSnackbar(message = state.errorMessage, duration = SnackbarDuration.Long)
+                // Tampilkan pop-up Error
+                dialogTitle = "Gagal Login"
+                // Pesan error sudah diurai di Repository
+                dialogMessage = state.errorMessage
+                showDialog = true
             }
             else -> {}
         }
+    }
+
+    // AlertDialog Composable
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = {
+                Text(
+                    dialogTitle,
+                    color = MaterialTheme.colorScheme.error
+                )
+            },
+            text = {
+                Column {
+                    Text(dialogMessage)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Tambahkan CTA Register jika error terkait kredensial salah (karena akun bisa jadi belum terdaftar)
+                    if (dialogMessage.contains("Email atau Password yang Anda masukkan salah")) {
+                        TextButton(onClick = {
+                            showDialog = false
+                            navController.navigate(Screen.Register.route)
+                        }) {
+                            Text("Daftar Akun Baru", color = MaterialTheme.colorScheme.secondary)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    Text("Tutup")
+                }
+            }
+        )
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Login Pengguna", color = MaterialTheme.colorScheme.onPrimary) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary), // <--- PERUBAHAN DI SINI: Deep Moss
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             )
@@ -86,7 +131,7 @@ fun LoginScreen(
                 text = "LOGIN",
                 onClick = { if (validateAuthInput(email, password, { emailError = it }, { passwordError = it })) { viewModel.login(email, password) } },
                 isLoading = loginState is UiState.Loading,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary) // Deep Moss
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -94,7 +139,7 @@ fun LoginScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Belum punya akun? ")
                 TextButton(onClick = { navController.navigate(Screen.Register.route) }) {
-                    Text("Daftar di sini", color = MaterialTheme.colorScheme.secondary) // Deep Moss
+                    Text("Daftar di sini", color = MaterialTheme.colorScheme.secondary)
                 }
             }
         }

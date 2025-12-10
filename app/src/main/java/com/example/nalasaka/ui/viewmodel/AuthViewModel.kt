@@ -39,11 +39,21 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    fun register(name: String, email: String, password: String) {
+    fun register(
+        name: String,
+        email: String,
+        password: String,
+        // --- PERUBAHAN BARU ---
+        phoneNumber: String,
+        address: String,
+        confirmPassword: String
+        // ----------------------
+    ) {
         viewModelScope.launch {
             _registerState.value = UiState.Loading
             try {
-                val response = repository.register(name, email, password)
+                // Panggil repository dengan data yang lebih lengkap
+                val response = repository.register(name, email, password, phoneNumber, address, confirmPassword)
                 if (!response.error) {
                     _registerState.value = UiState.Success(response)
                 } else {

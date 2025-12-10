@@ -18,7 +18,6 @@ import com.example.nalasaka.ui.screen.profile.ProfileScreen
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nalasaka.ui.screen.history.TransactionHistoryScreen
-import com.example.nalasaka.ui.screen.profile.ProfileScreen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
 
 @Composable

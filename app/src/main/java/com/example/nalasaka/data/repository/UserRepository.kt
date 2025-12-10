@@ -35,9 +35,18 @@ class UserRepository private constructor(
 
 
     // --- Remote API Operations ---
-    suspend fun register(name: String, email: String, password: String): ResponseSaka {
+    suspend fun register(
+        name: String,
+        email: String,
+        password: String,
+        // --- PERUBAHAN BARU: Tambah no_hp dan alamat ---
+        phoneNumber: String,
+        address: String,
+        passwordConfirmation: String // Ditambah untuk 'confirmed' di backend
+        // -----------------------------------------------
+    ): ResponseSaka {
         // Logika mocking bisa ditambahkan di sini, tapi umumnya Register tetap ke API
-        return apiService.register(name, email, password)
+        return apiService.register(name, email, phoneNumber, address, password, passwordConfirmation)
     }
 
     suspend fun login(email: String, password: String): ResponseSaka {

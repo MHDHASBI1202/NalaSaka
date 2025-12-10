@@ -16,7 +16,11 @@ interface ApiService {
     suspend fun register(
         @Field("name") name: String,
         @Field("email") email: String,
-        @Field("password") password: String
+        // --- PERUBAHAN BARU: Tambah no_hp dan alamat ---
+        @Field("phone_number") phoneNumber: String,
+        @Field("address") address: String,
+        @Field("password") password: String,
+        @Field("password_confirmation") passwordConfirmation: String
     ): ResponseSaka
 
     @FormUrlEncoded

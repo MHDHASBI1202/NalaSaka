@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,32 +32,83 @@ fun RegisterScreen(
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+
     var nameError by remember { mutableStateOf<String?>(null) }
     var emailError by remember { mutableStateOf<String?>(null) }
+    var phoneNumberError by remember { mutableStateOf<String?>(null) }
+    var addressError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+    var confirmPasswordError by remember { mutableStateOf<String?>(null) }
+
+    // State untuk AlertDialog
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogTitle by remember { mutableStateOf("") }
+    var dialogMessage by remember { mutableStateOf("") }
+
 
     LaunchedEffect(registerState) {
         when (val state = registerState) {
             is UiState.Success -> {
-                snackbarHostState.showSnackbar(message = "Pendaftaran berhasil! Silakan Login.", duration = SnackbarDuration.Long)
-                navController.navigate(Screen.Login.route) { popUpTo(Screen.Register.route) { inclusive = true } }
+                // Tampilkan pop-up Sukses
+                dialogTitle = "Pendaftaran Berhasil!"
+                dialogMessage = "Akun Anda telah berhasil dibuat. Silakan masuk untuk memulai."
+                showDialog = true
             }
             is UiState.Error -> {
-                snackbarHostState.showSnackbar(message = state.errorMessage, duration = SnackbarDuration.Long)
+                // Tampilkan pop-up Error
+                dialogTitle = "Gagal Mendaftar"
+                // Pesan error sudah diurai di Repository
+                dialogMessage = state.errorMessage
+                showDialog = true
             }
             else -> {}
         }
+    }
+
+    // AlertDialog Composable
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDialog = false
+                if (registerState is UiState.Success) {
+                    navController.navigate(Screen.Login.route) { popUpTo(Screen.Register.route) { inclusive = true } }
+                }
+            },
+            title = {
+                Text(
+                    dialogTitle,
+                    color = if (registerState is UiState.Success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                )
+            },
+            text = { Text(dialogMessage) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDialog = false
+                        if (registerState is UiState.Success) {
+                            navController.navigate(Screen.Login.route) { popUpTo(Screen.Login.route) { inclusive = true } }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    Text("OK")
+                }
+            }
+        )
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Daftar Pengguna Baru", color = MaterialTheme.colorScheme.onPrimary) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary), // <--- PERUBAHAN DI SINI: Deep Moss
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.secondary),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             )
@@ -77,21 +128,47 @@ fun RegisterScreen(
             Text(text = "Buat Akun NalaSaka", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Field Nama Lengkap
             CustomTextField(value = name, onValueChange = { name = it; nameError = null }, label = "Nama Lengkap", isError = nameError != null, errorMessage = nameError)
+
+            // Field Email
             CustomTextField(value = email, onValueChange = { email = it; emailError = null }, label = "Email", keyboardType = KeyboardType.Email, isError = emailError != null, errorMessage = emailError)
-            CustomTextField(value = password, onValueChange = { password = it; passwordError = null }, label = "Password (min 8 karakter)", keyboardType = KeyboardType.Password, isError = passwordError != null, errorMessage = passwordError)
+
+            // Field No HP dan Alamat
+            CustomTextField(value = phoneNumber, onValueChange = { phoneNumber = it; phoneNumberError = null }, label = "Nomor Handphone", keyboardType = KeyboardType.Phone, isError = phoneNumberError != null, errorMessage = phoneNumberError)
+            CustomTextField(value = address, onValueChange = { address = it; addressError = null }, label = "Alamat Lengkap", keyboardType = KeyboardType.Text, isError = addressError != null, errorMessage = addressError)
+
+            // Field Password
+            CustomTextField(value = password, onValueChange = { password = it; passwordError = null; confirmPasswordError = null }, label = "Password (min 8 karakter)", keyboardType = KeyboardType.Password, isError = passwordError != null, errorMessage = passwordError)
+
+            // Field Konfirmasi Password
+            CustomTextField(value = confirmPassword, onValueChange = { confirmPassword = it; confirmPasswordError = null }, label = "Konfirmasi Password", keyboardType = KeyboardType.Password, isError = confirmPasswordError != null, errorMessage = confirmPasswordError)
 
             Spacer(modifier = Modifier.height(16.dp))
 
             PrimaryButton(
                 text = "DAFTAR",
                 onClick = {
-                    if (validateRegisterInput(name, email, password, { nameError = it }, { emailError = it }, { passwordError = it })) {
-                        viewModel.register(name, email, password)
+                    if (validateRegisterInput(
+                            name,
+                            email,
+                            phoneNumber,
+                            address,
+                            password,
+                            confirmPassword,
+                            { nameError = it },
+                            { emailError = it },
+                            { phoneNumberError = it },
+                            { addressError = it },
+                            { passwordError = it },
+                            { confirmPasswordError = it }
+                        )
+                    ) {
+                        viewModel.register(name, email, password, phoneNumber, address, confirmPassword)
                     }
                 },
                 isLoading = registerState is UiState.Loading,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary) // Deep Moss
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -99,7 +176,7 @@ fun RegisterScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Sudah punya akun? ")
                 TextButton(onClick = { navController.navigate(Screen.Login.route) }) {
-                    Text("Login di sini", color = MaterialTheme.colorScheme.secondary) // Deep Moss
+                    Text("Login di sini", color = MaterialTheme.colorScheme.secondary)
                 }
             }
         }
@@ -107,10 +184,54 @@ fun RegisterScreen(
 }
 
 // Fungsi validasi ditempatkan di luar Composable
-private fun validateRegisterInput(name: String, email: String, password: String, onNameError: (String) -> Unit, onEmailError: (String) -> Unit, onPasswordError: (String) -> Unit): Boolean {
+private fun validateRegisterInput(
+    name: String,
+    email: String,
+    phoneNumber: String,
+    address: String,
+    password: String,
+    confirmPassword: String,
+    onNameError: (String?) -> Unit,
+    onEmailError: (String?) -> Unit,
+    onPhoneNumberError: (String?) -> Unit,
+    onAddressError: (String?) -> Unit,
+    onPasswordError: (String?) -> Unit,
+    onConfirmPasswordError: (String?) -> Unit
+): Boolean {
     var isValid = true
-    if (name.isBlank()) { onNameError("Nama wajib diisi"); isValid = false }
-    if (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) { onEmailError("Email tidak valid"); isValid = false }
-    if (password.isBlank() || password.length < 8) { onPasswordError("Password minimal 8 karakter"); isValid = false }
+
+    onNameError(null)
+    onEmailError(null)
+    onPhoneNumberError(null)
+    onAddressError(null)
+    onPasswordError(null)
+    onConfirmPasswordError(null)
+
+    if (name.isBlank()) {
+        onNameError("Nama wajib diisi"); isValid = false
+    }
+
+    if (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        onEmailError("Email tidak valid"); isValid = false
+    }
+
+    if (phoneNumber.isBlank()) {
+        onPhoneNumberError("Nomor HP wajib diisi"); isValid = false
+    } else if (phoneNumber.length < 10) {
+        onPhoneNumberError("Nomor HP minimal 10 digit"); isValid = false
+    }
+
+    if (address.isBlank()) {
+        onAddressError("Alamat wajib diisi"); isValid = false
+    }
+
+    if (password.isBlank() || password.length < 8) {
+        onPasswordError("Password minimal 8 karakter"); isValid = false
+    }
+
+    if (confirmPassword.isBlank() || confirmPassword != password) {
+        onConfirmPasswordError("Konfirmasi password tidak cocok"); isValid = false
+    }
+
     return isValid
 }
