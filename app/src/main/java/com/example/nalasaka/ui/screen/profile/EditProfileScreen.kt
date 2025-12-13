@@ -12,6 +12,7 @@ import androidx.compose.runtime.saveable.rememberSaveable // Import yang diperlu
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,43 +34,42 @@ fun EditProfileScreen(
     val profileState by viewModel.profileState.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
 
-    // Ambil data profil dari ViewModel
     val profile = (profileState as? UiState.Success)?.data ?: ProfileData("0", "", "", null, null, null)
 
-    // State yang dapat diubah dan dipertahankan
     var name by rememberSaveable { mutableStateOf(profile.name) }
     var phoneNumber by rememberSaveable { mutableStateOf(profile.phoneNumber ?: "") }
     var address by rememberSaveable { mutableStateOf(profile.address ?: "") }
+    var storeName by rememberSaveable { mutableStateOf(profile.storeName ?: "") } // NEW: State Nama Toko
 
-    // Sinkronisasi state lokal dengan data profil yang baru dimuat
+
     LaunchedEffect(profile) {
         if (profile.name.isNotEmpty() && profileState is UiState.Success) {
             name = profile.name
-            // Memastikan data yang baru dimuat digunakan
             phoneNumber = profile.phoneNumber ?: ""
             address = profile.address ?: ""
+            storeName = profile.storeName ?: "" // NEW: Sinkronisasi store name
         }
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Efek samping untuk menangani hasil update
     LaunchedEffect(updateState) {
         when (val state = updateState) {
             is UiState.Success -> {
                 snackbarHostState.showSnackbar("Profil berhasil diperbarui!")
-                navController.popBackStack() // Kembali ke ProfileScreen setelah sukses
-                viewModel.resetUpdateState() // Reset state agar tidak trigger lagi
+                navController.popBackStack()
+                viewModel.resetUpdateState()
             }
             is UiState.Error -> {
                 snackbarHostState.showSnackbar("Gagal: ${state.errorMessage}")
-                viewModel.resetUpdateState() // Reset state setelah error
+                viewModel.resetUpdateState()
             }
             else -> { /* Do nothing */ }
         }
     }
 
     val isSaving = updateState is UiState.Loading
+    val isSeller = profile.role == "seller" // NEW: Deteksi role
 
     Scaffold(
         topBar = {
@@ -78,7 +78,6 @@ fun EditProfileScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        // Menggunakan ikon ArrowBack yang disarankan
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
@@ -86,7 +85,6 @@ fun EditProfileScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        // Handle Loading dan Error state dari pemuatan profil awal
         when (profileState) {
             is UiState.Loading, UiState.Idle -> Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             is UiState.Error -> Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) { Text(text = "Gagal memuat profil: ${(profileState as UiState.Error).errorMessage}", color = MaterialTheme.colorScheme.error) }
@@ -104,6 +102,30 @@ fun EditProfileScreen(
                         color = Color.Gray,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
+
+                    // NEW: Field Nama Toko jika user adalah seller
+                    if (isSeller) {
+                        Text(
+                            text = "Informasi Penjual",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        CustomTextField(
+                            value = storeName,
+                            onValueChange = { storeName = it },
+                            label = "Nama Toko",
+                            placeholder = "Masukkan nama toko Anda",
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                        )
+                        Divider(thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 16.dp))
+                        Text(
+                            text = "Informasi Akun",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
 
                     // Input Nama
                     CustomTextField(
@@ -153,7 +175,8 @@ fun EditProfileScreen(
                     PrimaryButton(
                         text = if (isSaving) "Menyimpan..." else "SIMPAN PERUBAHAN",
                         onClick = {
-                            viewModel.updateProfile(name, phoneNumber, address)
+                            // Kirim storeName jika user adalah seller
+                            viewModel.updateProfile(name, phoneNumber, address, if (isSeller) storeName else null)
                         },
                         enabled = !isSaving,
                         modifier = Modifier.fillMaxWidth()

@@ -15,9 +15,12 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
     private val _profileState = MutableStateFlow<UiState<ProfileData>>(UiState.Idle)
     val profileState: StateFlow<UiState<ProfileData>> = _profileState.asStateFlow()
 
-    // NEW: State untuk memantau proses update profil
     private val _updateState = MutableStateFlow<UiState<ProfileData>>(UiState.Idle)
     val updateState: StateFlow<UiState<ProfileData>> = _updateState.asStateFlow()
+
+    // NEW: State untuk memantau proses aktivasi seller
+    private val _sellerActivationState = MutableStateFlow<UiState<ProfileData>>(UiState.Idle)
+    val sellerActivationState: StateFlow<UiState<ProfileData>> = _sellerActivationState.asStateFlow()
 
     init {
         loadUserProfile()
@@ -44,20 +47,17 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    // NEW: Fungsi untuk update profil
-    fun updateProfile(name: String, phoneNumber: String, address: String) {
+    fun updateProfile(name: String, phoneNumber: String, address: String, storeName: String? = null) {
         viewModelScope.launch {
             _updateState.value = UiState.Loading
             try {
                 val user = repository.getUser().first()
                 if (user.isLogin) {
-                    val response = repository.updateUserProfile(user.token, name, phoneNumber, address)
+                    val response = repository.updateUserProfile(user.token, name, phoneNumber, address, storeName)
                     if (!response.error) {
                         _updateState.value = UiState.Success(response.user)
-                        // Perbarui state profil utama dan data user preference (jika nama berubah)
                         _profileState.value = UiState.Success(response.user)
 
-                        // Update nama di DataStore jika ada perubahan nama
                         if (user.name != response.user.name) {
                             repository.saveUser(user.copy(name = response.user.name))
                         }
@@ -73,8 +73,36 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    // NEW: Fungsi untuk mereset update state
+    // NEW: Fungsi untuk mengaktifkan mode penjual
+    fun activateSellerMode(storeName: String) {
+        viewModelScope.launch {
+            _sellerActivationState.value = UiState.Loading
+            try {
+                val user = repository.getUser().first()
+                if (user.isLogin) {
+                    val response = repository.activateSellerMode(user.token, storeName)
+                    if (!response.error) {
+                        _sellerActivationState.value = UiState.Success(response.user)
+                        _profileState.value = UiState.Success(response.user)
+                    } else {
+                        _sellerActivationState.value = UiState.Error(response.message)
+                    }
+                } else {
+                    _sellerActivationState.value = UiState.Error("User not logged in.")
+                }
+            } catch (e: Exception) {
+                _sellerActivationState.value = UiState.Error(e.message ?: "Gagal mengaktifkan mode penjual.")
+            }
+        }
+    }
+
+
     fun resetUpdateState() {
         _updateState.value = UiState.Idle
+    }
+
+    // NEW: Fungsi untuk mereset seller activation state
+    fun resetSellerActivationState() {
+        _sellerActivationState.value = UiState.Idle
     }
 }

@@ -80,13 +80,22 @@ interface ApiService {
         @Header("Authorization") token: String
     ): ProfileResponse
 
-    // NEW: Endpoint untuk update profil (name, phone_number, address)
+    // Endpoint untuk update profil (name, phone_number, address, store_name)
     @FormUrlEncoded
     @PATCH("user/profile")
     suspend fun updateUserProfile(
         @Header("Authorization") token: String,
         @Field("name") name: String,
         @Field("phone_number") phoneNumber: String,
-        @Field("address") address: String
+        @Field("address") address: String,
+        @Field("store_name") storeName: String? = null // FIX: Menambahkan store_name
+    ): ProfileResponse
+
+    // NEW: Endpoint untuk mengaktifkan mode penjual
+    @FormUrlEncoded
+    @POST("user/activate-seller")
+    suspend fun activateSellerMode(
+        @Header("Authorization") token: String,
+        @Field("store_name") storeName: String
     ): ProfileResponse
 }

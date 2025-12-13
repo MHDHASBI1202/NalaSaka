@@ -160,7 +160,9 @@ class UserRepository private constructor(
                 email = DUMMY_EMAIL,
                 photoUrl = "https://i.imgur.com/K1S2Y9C.png", // URL Gambar Profil Placeholder
                 phoneNumber = "081234567890",
-                address = "Jl. Pertanian Jaya No. 42, Kota Sejahtera"
+                address = "Jl. Pertanian Jaya No. 42, Kota Sejahtera",
+                role = "customer", // DITAMBAHKAN
+                storeName = null // DITAMBAHKAN
             )
             return ProfileResponse(
                 error = false,
@@ -173,13 +175,20 @@ class UserRepository private constructor(
         return apiService.getUserProfile("Bearer $token")
     }
 
-    suspend fun updateUserProfile(token: String, name: String, phoneNumber: String, address: String): ProfileResponse {
+    // FIX: Menambahkan storeName: String? = null
+    suspend fun updateUserProfile(token: String, name: String, phoneNumber: String, address: String, storeName: String? = null): ProfileResponse {
         return apiService.updateUserProfile(
             token = "Bearer $token",
             name = name,
             phoneNumber = phoneNumber,
-            address = address
+            address = address,
+            storeName = storeName // FIX: Meneruskan storeName ke ApiService
         )
+    }
+
+    // NEW: Fungsi Repository untuk mengaktifkan mode penjual
+    suspend fun activateSellerMode(token: String, storeName: String): ProfileResponse {
+        return apiService.activateSellerMode("Bearer $token", storeName)
     }
 
     companion object {

@@ -125,7 +125,8 @@ data class CheckoutResponse(
     @field:SerializedName("transaction_id")
     val transactionId: Int? = null
 )
-// Data class untuk Detail Profil Pengguna
+
+// Data class untuk Detail Profil Pengguna (DIPERBARUI)
 data class ProfileData(
     @field:SerializedName("userId")
     val userId: String,
@@ -143,7 +144,13 @@ data class ProfileData(
     val phoneNumber: String? = null, // Data tambahan
 
     @field:SerializedName("address")
-    val address: String? = null // Data tambahan
+    val address: String? = null, // Data tambahan
+
+    @field:SerializedName("role")
+    val role: String = "customer", // NEW: Default 'customer'
+
+    @field:SerializedName("storeName")
+    val storeName: String? = null // NEW: Nama Toko
 )
 
 // Response untuk Mendapatkan Detail Profil Pengguna

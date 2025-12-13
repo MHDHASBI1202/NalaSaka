@@ -20,6 +20,7 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
     private val NAME_KEY = stringPreferencesKey("name")
     private val TOKEN_KEY = stringPreferencesKey("token")
     private val IS_LOGIN_KEY = booleanPreferencesKey("is_login")
+    private val ROLE_KEY = stringPreferencesKey("role") // NEW: Kunci untuk Role
 
     // Mendapatkan model user sebagai Flow
     fun getUser(): Flow<UserModel> {
@@ -28,7 +29,8 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
                 preferences[USER_ID_KEY] ?: "",
                 preferences[NAME_KEY] ?: "",
                 preferences[TOKEN_KEY] ?: "",
-                preferences[IS_LOGIN_KEY] ?: false
+                preferences[IS_LOGIN_KEY] ?: false,
+                preferences[ROLE_KEY] ?: "customer" // NEW: Ambil nilai role, default 'customer'
             )
         }
     }
@@ -40,6 +42,7 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
             preferences[NAME_KEY] = user.name
             preferences[TOKEN_KEY] = user.token
             preferences[IS_LOGIN_KEY] = true // Set isLogin ke true
+            preferences[ROLE_KEY] = user.role // NEW: Simpan role
         }
     }
 
@@ -50,6 +53,7 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
             preferences[NAME_KEY] = ""
             preferences[TOKEN_KEY] = ""
             preferences[IS_LOGIN_KEY] = false // Set isLogin ke false
+            preferences[ROLE_KEY] = "customer" // NEW: Reset role ke default
         }
     }
 

@@ -9,9 +9,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+// FIX: Menggunakan AutoMirrored untuk ikon yang mendukung RTL (Right-to-Left)
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
-// Import baru untuk ikon edit (pensil)
+// Import untuk ikon edit (pensil)
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -58,7 +59,8 @@ fun ProfileScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary), // Burnt Orangeish
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        // Menggunakan AutoMirrored.ArrowBack
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             )
@@ -78,13 +80,41 @@ fun ProfileScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 1. HEADER PROFIL (DeepMoss Background) - Statistik Dihapus
+                    // 1. HEADER PROFIL (DeepMoss Background)
                     ProfileHeader(profile = profile)
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 2. TAMPILAN DETAIL PROFIL AKTUAL DARI DB DENGAN SATU TOMBOL EDIT
-                    ProfileDetailsSection(profile = profile, navController = navController) // NAVCONTROLLER DITAMBAHKAN
+                    // NEW: Tampilkan Nama Toko jika user adalah seller
+                    if (profile.role == "seller" && profile.storeName != null) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                                Text(
+                                    text = "Nama Toko",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = profile.storeName,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+
+
+                    // 2. TAMPILAN DETAIL PROFIL AKTUAL
+                    ProfileDetailsSection(profile = profile, navController = navController)
 
                     Spacer(modifier = Modifier.height(32.dp))
 
@@ -101,16 +131,18 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 4. MULAI MENJUAL BUTTON (Link Tekstual - Burnt Orangeish) - Dipertahankan
-                    TextButton(onClick = {
-                        /* TODO: Implementasi aktivasi mode seller */
-                    }) {
-                        Text(
-                            text = "Mulai Menjual",
-                            color = MaterialTheme.colorScheme.primary, // Burnt Orangeish
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
+                    // 4. MULAI MENJUAL BUTTON (Logic diubah)
+                    if (profile.role != "seller") { // Hanya tampilkan jika user BUKAN seller
+                        TextButton(onClick = {
+                            navController.navigate(Screen.VerifySeller.route) // Navigasi ke verifikasi seller
+                        }) {
+                            Text(
+                                text = "Mulai Menjual",
+                                color = MaterialTheme.colorScheme.primary, // Burnt Orangeish
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -161,9 +193,9 @@ fun ProfileHeader(profile: ProfileData) {
     }
 }
 
-// Fungsi BARU untuk menampilkan data profil dengan tombol edit tunggal di atas
+// Fungsi untuk menampilkan data profil dengan tombol edit tunggal
 @Composable
-fun ProfileDetailsSection(profile: ProfileData, navController: NavHostController) { // NAVCONTROLLER DITERIMA
+fun ProfileDetailsSection(profile: ProfileData, navController: NavHostController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -204,7 +236,7 @@ fun ProfileDetailsSection(profile: ProfileData, navController: NavHostController
             // Single Edit Button diposisikan di sudut kanan atas Card
             IconButton(
                 onClick = {
-                    navController.navigate(Screen.EditProfile.route) // NAVIGASI DITAMBAHKAN
+                    navController.navigate(Screen.EditProfile.route) // Navigasi ke Edit Profil
                 },
                 modifier = Modifier
                     .align(Alignment.TopEnd) // Posisikan di sudut kanan atas
@@ -220,7 +252,7 @@ fun ProfileDetailsSection(profile: ProfileData, navController: NavHostController
     }
 }
 
-// Komponen Pembantu untuk setiap baris detail tetap sama
+// Komponen Pembantu untuk setiap baris detail
 @Composable
 fun ProfileDetailItem(
     label: String,

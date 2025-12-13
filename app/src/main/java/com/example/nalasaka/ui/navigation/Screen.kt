@@ -16,6 +16,7 @@ sealed class Screen(val route: String) {
     // --- TAMBAHAN UNTUK MODUL PROFIL ---
     object Profile : Screen("profile")
     object EditProfile : Screen("edit_profile")
+    object VerifySeller : Screen("verify_seller") // NEW: Rute verifikasi seller
 
     // Rute Detail Produk (Memerlukan argumen ID)
     object Detail : Screen("detail/{sakaId}") {
