@@ -9,10 +9,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Person
+// Import baru untuk ikon edit (pensil)
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,9 +34,6 @@ import com.example.nalasaka.ui.viewmodel.ProfileViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import com.example.nalasaka.data.remote.response.ProfileData
-
-// --- Mock Data Tambahan untuk Statistik ---
-data class ProfileStats(val following: Int, val products: Int, val followers: Int)
 
 // Fungsi untuk mendapatkan ViewModel Auth
 @Composable
@@ -54,18 +50,6 @@ fun ProfileScreen(
     val profileState by viewModel.profileState.collectAsState()
     val authViewModel = getAuthViewModel(navController)
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // Mock Data Statis
-    val mockStats = ProfileStats(following = 5, products = 100, followers = 1500)
-
-    // Daftar Menu Aksi (Contoh: Bisa diubah menjadi navigasi sebenarnya)
-    val actionItems = listOf(
-        "Ubah Profil",
-        "Atur Alamat",
-        "Pengaturan Akun",
-        "Syarat & Ketentuan",
-        "Bantuan"
-    )
 
     Scaffold(
         topBar = {
@@ -94,33 +78,17 @@ fun ProfileScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 1. HEADER PROFIL (DeepMoss Background)
-                    ProfileHeader(profile = profile, stats = mockStats)
+                    // 1. HEADER PROFIL (DeepMoss Background) - Statistik Dihapus
+                    ProfileHeader(profile = profile)
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // 2. MENU Aksi
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            actionItems.forEach { label ->
-                                ProfileMenuItem(label = label) {
-                                    // Aksi klik menu
-                                    // snackbarHostState.showSnackbar("Navigasi ke $label")
-                                }
-                                Divider(thickness = 0.5.dp, color = Color.LightGray)
-                            }
-                        }
-                    }
+                    // 2. TAMPILAN DETAIL PROFIL AKTUAL DARI DB DENGAN SATU TOMBOL EDIT
+                    ProfileDetailsSection(profile = profile, navController = navController) // NAVCONTROLLER DITAMBAHKAN
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // 3. LOG OUT BUTTON (DeepMoss)
+                    // 3. LOG OUT BUTTON (DeepMoss) - Dipertahankan
                     PrimaryButton(
                         text = "LOG OUT",
                         onClick = {
@@ -128,15 +96,14 @@ fun ProfileScreen(
                             navController.navigate(Screen.Welcome.route) { popUpTo(Screen.Home.route) { inclusive = true } }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary), // Deep Moss
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 4. MULAI MENJUAL BUTTON (Link Tekstual - Burnt Orangeish)
+                    // 4. MULAI MENJUAL BUTTON (Link Tekstual - Burnt Orangeish) - Dipertahankan
                     TextButton(onClick = {
                         /* TODO: Implementasi aktivasi mode seller */
-                        // snackbarHostState.showSnackbar("Mengarahkan ke pendaftaran Seller")
                     }) {
                         Text(
                             text = "Mulai Menjual",
@@ -154,93 +121,130 @@ fun ProfileScreen(
     }
 }
 
+// ProfileHeader tetap sama
 @Composable
-fun ProfileHeader(profile: ProfileData, stats: ProfileStats) {
+fun ProfileHeader(profile: ProfileData) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.secondary) // Deep Moss
             .padding(24.dp)
     ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Foto Profil
-                Card(
-                    shape = CircleShape,
-                    colors = CardDefaults.cardColors(containerColor = Color.LightGray),
-                    modifier = Modifier.size(80.dp)
-                ) {
-                    AsyncImage(
-                        model = profile.photoUrl,
-                        contentDescription = profile.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().clip(CircleShape),
-                        // --- PERBAIKAN DI SINI: Menggunakan rememberVectorPainter ---
-                        error = rememberVectorPainter(Icons.Default.Person),
-                        // Jika Anda ingin icon terpusat di tengah dengan ukuran tetap (seperti 50.dp)
-                        // Anda juga dapat menambahkan placeholder dan fallback dengan cara yang sama:
-                        placeholder = rememberVectorPainter(Icons.Default.Person),
-                        fallback = rememberVectorPainter(Icons.Default.Person)
-                        // -----------------------------------------------------------
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Nama
-                Text(
-                    text = profile.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Foto Profil
+            Card(
+                shape = CircleShape,
+                colors = CardDefaults.cardColors(containerColor = Color.LightGray),
+                modifier = Modifier.size(80.dp)
+            ) {
+                AsyncImage(
+                    model = profile.photoUrl,
+                    contentDescription = profile.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    error = rememberVectorPainter(Icons.Default.Person),
+                    placeholder = rememberVectorPainter(Icons.Default.Person),
+                    fallback = rememberVectorPainter(Icons.Default.Person)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
-            // Statistik (Mengikuti | Produk | Pengikut)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                StatItem(value = stats.following, label = "Mengikuti")
-                StatItem(value = stats.products, label = "Produk")
-                StatItem(value = stats.followers, label = "Pengikut")
+            // Nama
+            Text(
+                text = profile.name,
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+// Fungsi BARU untuk menampilkan data profil dengan tombol edit tunggal di atas
+@Composable
+fun ProfileDetailsSection(profile: ProfileData, navController: NavHostController) { // NAVCONTROLLER DITERIMA
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) { // Padding untuk konten
+                // 1. Nama
+                ProfileDetailItem(
+                    label = "Nama",
+                    value = profile.name
+                )
+                Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+
+                // 2. Email (Tidak bisa diedit)
+                ProfileDetailItem(
+                    label = "Email",
+                    value = profile.email
+                )
+                Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+
+                // 3. Nomor HP
+                ProfileDetailItem(
+                    label = "Nomor HP",
+                    value = profile.phoneNumber ?: "Belum ditambahkan"
+                )
+                Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+
+                // 4. Alamat
+                ProfileDetailItem(
+                    label = "Alamat",
+                    value = profile.address ?: "Belum ditambahkan"
+                )
+            }
+
+            // Single Edit Button diposisikan di sudut kanan atas Card
+            IconButton(
+                onClick = {
+                    navController.navigate(Screen.EditProfile.route) // NAVIGASI DITAMBAHKAN
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd) // Posisikan di sudut kanan atas
+                    .padding(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Create, // Ikon pensil/edit
+                    contentDescription = "Edit Profil",
+                    tint = MaterialTheme.colorScheme.primary // Warna Burnt Orangeish
+                )
             }
         }
     }
 }
 
+// Komponen Pembantu untuk setiap baris detail tetap sama
 @Composable
-fun RowScope.StatItem(value: Int, label: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.weight(1f)
-    ) {
-        Text(
-            text = value.toString(),
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp
-        )
-        Text(
-            text = label,
-            color = Color.White.copy(alpha = 0.8f),
-            fontSize = 12.sp
-        )
-    }
-}
-
-@Composable
-fun ProfileMenuItem(label: String, onClick: () -> Unit) {
+fun ProfileDetailItem(
+    label: String,
+    value: String
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 16.dp, horizontal = 24.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Placeholder Icon (misalnya: menggunakan Person untuk semua)
-        Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(text = label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Icon(Icons.Default.ArrowForwardIos, contentDescription = "Next", tint = Color.Gray, modifier = Modifier.size(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.Gray
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }

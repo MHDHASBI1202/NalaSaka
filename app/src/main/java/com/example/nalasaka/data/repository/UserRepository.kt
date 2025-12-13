@@ -173,6 +173,15 @@ class UserRepository private constructor(
         return apiService.getUserProfile("Bearer $token")
     }
 
+    suspend fun updateUserProfile(token: String, name: String, phoneNumber: String, address: String): ProfileResponse {
+        return apiService.updateUserProfile(
+            token = "Bearer $token",
+            name = name,
+            phoneNumber = phoneNumber,
+            address = address
+        )
+    }
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

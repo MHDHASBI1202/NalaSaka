@@ -28,9 +28,10 @@ fun CustomTextField(
     keyboardType: KeyboardType = KeyboardType.Text,
     isError: Boolean = false,
     errorMessage: String? = null,
-    // --- TAMBAHKAN PARAMETER INI ---
+    // --- PERBAIKAN: Menambahkan parameter placeholder ---
+    placeholder: String? = null,
+    // --- PARAMETER YANG SUDAH ADA ---
     maxLines: Int = 1 // Default 1 baris
-    // -----------------------------
 ) {
     val isPasswordField = keyboardType == KeyboardType.Password
 
@@ -47,13 +48,14 @@ fun CustomTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
+        // --- PERBAIKAN: Menggunakan placeholder di OutlinedTextField ---
+        placeholder = if (placeholder != null) { { Text(placeholder) } } else null,
+        // -----------------------------------------------------------
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         visualTransformation = visualTransformation,
         isError = isError,
-        // --- GUNAKAN PARAMETER INI ---
         singleLine = !isPasswordField && maxLines == 1,
         maxLines = maxLines,
-        // -----------------------------
         trailingIcon = {
             if (isPasswordField) {
                 val iconImage = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff

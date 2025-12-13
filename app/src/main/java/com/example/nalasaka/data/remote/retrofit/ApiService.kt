@@ -79,4 +79,14 @@ interface ApiService {
     suspend fun getUserProfile(
         @Header("Authorization") token: String
     ): ProfileResponse
+
+    // NEW: Endpoint untuk update profil (name, phone_number, address)
+    @FormUrlEncoded
+    @PATCH("user/profile")
+    suspend fun updateUserProfile(
+        @Header("Authorization") token: String,
+        @Field("name") name: String,
+        @Field("phone_number") phoneNumber: String,
+        @Field("address") address: String
+    ): ProfileResponse
 }
