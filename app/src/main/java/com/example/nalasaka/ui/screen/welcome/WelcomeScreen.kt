@@ -77,12 +77,12 @@ fun WelcomeScreen(
             // Hamba menggunakan gambar bawaan Android sebagai placeholder untuk mockup Yang Mulia
             Image(
                 // Ganti dengan aset gambar yang Yang Mulia gunakan di Launch.png jika sudah ada
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                contentDescription = "NalaSaka Image",
-                modifier = Modifier.size(160.dp) // Ukuran sedikit diperbesar
+                painter = painterResource(id = R.drawable.iconnala), // Sesuaikan dengan nama file Anda
+                contentDescription = "Logo NalaSaka",
+                modifier = Modifier.size(200.dp) // Ukuran sedikit diperbesar
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Nama Aplikasi (Warna Putih agar kontras)
             Text(
