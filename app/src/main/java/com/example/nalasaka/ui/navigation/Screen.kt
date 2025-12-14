@@ -16,7 +16,12 @@ sealed class Screen(val route: String) {
     // --- TAMBAHAN UNTUK MODUL PROFIL ---
     object Profile : Screen("profile")
     object EditProfile : Screen("edit_profile")
-    object VerifySeller : Screen("verify_seller") // NEW: Rute verifikasi seller
+    object VerifySeller : Screen("verify_seller") // Rute verifikasi seller
+
+    // --- NEW: DASHBOARD SELLER (Pengganti Promo) ---
+    object SellerDashboard : Screen("seller_dashboard")
+
+    object SellerInventory : Screen("seller_inventory")
 
     // Rute Detail Produk (Memerlukan argumen ID)
     object Detail : Screen("detail/{sakaId}") {
@@ -25,7 +30,4 @@ sealed class Screen(val route: String) {
 
     // Rute untuk Riwayat Transaksi
     object TransactionHistory : Screen("transaction_history")
-
-    // Anda bisa tambahkan rute untuk modul Reputasi & Analisis di sini,
-    // misalnya: object Dashboard: Screen("dashboard")
 }

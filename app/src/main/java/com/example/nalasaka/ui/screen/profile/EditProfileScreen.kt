@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 // Perbaikan: Menggunakan ikon AutoMirrored untuk ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable // Import yang diperlukan
 import androidx.compose.ui.Alignment
@@ -118,7 +119,11 @@ fun EditProfileScreen(
                             placeholder = "Masukkan nama toko Anda",
                             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                         )
-                        Divider(thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 16.dp))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(bottom = 16.dp),
+                            thickness = 1.dp,
+                            color = Color.LightGray.copy(alpha = 0.5f)
+                        )
                         Text(
                             text = "Informasi Akun",
                             style = MaterialTheme.typography.titleMedium,

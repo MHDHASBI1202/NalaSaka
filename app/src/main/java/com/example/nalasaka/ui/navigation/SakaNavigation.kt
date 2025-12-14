@@ -17,9 +17,11 @@ import com.example.nalasaka.ui.screen.welcome.WelcomeScreen
 import com.example.nalasaka.ui.screen.profile.ProfileScreen
 import com.example.nalasaka.ui.screen.profile.EditProfileScreen
 import com.example.nalasaka.ui.screen.history.TransactionHistoryScreen
-import com.example.nalasaka.ui.screen.profile.VerifySellerScreen // NEW: Import VerifySellerScreen
+import com.example.nalasaka.ui.screen.profile.VerifySellerScreen
+import com.example.nalasaka.ui.screen.seller.SellerDashboardScreen // Import ini
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.nalasaka.ui.screen.seller.SellerInventoryScreen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
 
 @Composable
@@ -33,7 +35,7 @@ fun SakaNavigation(
     NavHost(
         modifier = modifier,
         navController = navController,
-        startDestination = Screen.Welcome.route // Titik mulai
+        startDestination = Screen.Welcome.route
     ) {
         // 1. WELCOME SCREEN
         composable(Screen.Welcome.route) {
@@ -59,7 +61,7 @@ fun SakaNavigation(
             )
         }
 
-        // 4. HOME SCREEN (MODUL PRODUK & PEMASARAN)
+        // 4. HOME SCREEN
         composable(Screen.Home.route) {
             HomeScreen(
                 navController = navController,
@@ -68,7 +70,7 @@ fun SakaNavigation(
             )
         }
 
-        // --- TAMBAHAN: PRODUK SCREEN ---
+        // --- PRODUK SCREEN ---
         composable(Screen.Produk.route) {
             ProductScreen(
                 navController = navController,
@@ -76,7 +78,7 @@ fun SakaNavigation(
             )
         }
 
-        // 5. ADD SAKA SCREEN (UPLOAD FOTO BARANG)
+        // 5. ADD SAKA SCREEN (Diakses dari Dashboard Seller sekarang)
         composable(Screen.AddSaka.route) {
             AddSakaScreen(
                 navController = navController,
@@ -84,7 +86,7 @@ fun SakaNavigation(
             )
         }
 
-        // 6. DETAIL SCREEN (Membutuhkan ID Produk)
+        // 6. DETAIL SCREEN
         composable(
             route = Screen.Detail.route,
             arguments = listOf(navArgument("sakaId") { type = NavType.StringType })
@@ -97,9 +99,7 @@ fun SakaNavigation(
             )
         }
 
-        // --- RUTE PROFIL & PENJUAL ---
-
-        // 7. PROFILE SCREEN (Dipertahankan versi dengan ViewModel)
+        // 7. PROFILE SCREEN
         composable(Screen.Profile.route) {
             ProfileScreen(
                 navController = navController,
@@ -112,12 +112,25 @@ fun SakaNavigation(
             EditProfileScreen(navController = navController)
         }
 
-        // NEW: VERIFY SELLER SCREEN
+        // VERIFY SELLER SCREEN
         composable(Screen.VerifySeller.route) {
             VerifySellerScreen(navController = navController)
         }
 
-        // 9. TRANSACTION HISTORY SCREEN (Modul Transaksi & Logistik)
+        // --- NEW: DASHBOARD SELLER ---
+        composable(Screen.SellerDashboard.route) {
+            SellerDashboardScreen(
+                navController = navController,
+                authViewModel = authViewModel // Reuse auth viewmodel untuk data user
+            )
+        }
+
+        // NEW: Rute Inventory/Stok Seller
+        composable(Screen.SellerInventory.route) {
+            SellerInventoryScreen(navController = navController)
+        }
+
+        // 9. TRANSACTION HISTORY SCREEN
         composable(Screen.TransactionHistory.route) {
             TransactionHistoryScreen(
                 navController = navController,

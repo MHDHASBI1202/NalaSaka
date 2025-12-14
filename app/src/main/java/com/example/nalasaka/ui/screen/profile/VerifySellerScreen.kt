@@ -39,18 +39,17 @@ fun VerifySellerScreen(
     var storeName by rememberSaveable { mutableStateOf("") }
     var isConfirmed by rememberSaveable { mutableStateOf(false) }
 
+    // State untuk kontrol Dialog Sukses
+    var showSuccessDialog by remember { mutableStateOf(false) }
+
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Efek samping untuk menangani hasil aktivasi
+    // --- LOGIKA UTAMA: Handle State Aktivasi ---
     LaunchedEffect(activationState) {
         when (val state = activationState) {
             is UiState.Success -> {
-                snackbarHostState.showSnackbar("Selamat! Anda kini adalah penjual: ${state.data.storeName}")
-                // Kembali ke ProfileScreen dan memicu refresh
-                navController.navigate(Screen.Profile.route) {
-                    popUpTo(Screen.Profile.route) { inclusive = true }
-                }
-                viewModel.resetSellerActivationState()
+                // Jika sukses, tampilkan Dialog pilihan navigasi
+                showSuccessDialog = true
             }
             is UiState.Error -> {
                 snackbarHostState.showSnackbar("Gagal aktivasi penjual: ${state.errorMessage}")
@@ -58,6 +57,67 @@ fun VerifySellerScreen(
             }
             else -> { /* Do nothing */ }
         }
+    }
+
+    // --- POP-UP DIALOG SUKSES & NAVIGASI ---
+    if (showSuccessDialog) {
+        val createdStoreName = (activationState as? UiState.Success)?.data?.storeName ?: ""
+
+        AlertDialog(
+            onDismissRequest = {
+                // Jika dialog ditutup paksa (klik luar), arahkan ke Profil sebagai default
+                viewModel.resetSellerActivationState()
+                showSuccessDialog = false
+                navController.navigate(Screen.Profile.route) {
+                    // Tutup halaman verifikasi dengan membersihkan stack sampai ke Home
+                    popUpTo(Screen.Home.route) {
+                        saveState = false // Jangan simpan state halaman verifikasi
+                    }
+                    launchSingleTop = true
+                }
+            },
+            title = { Text("Aktivasi Berhasil!") },
+            text = {
+                Text("Selamat! Toko \"$createdStoreName\" berhasil dibuat. Anda kini resmi menjadi Penjual. Mau ke mana sekarang?")
+            },
+            confirmButton = {
+                // Pilihan 1: Langsung ke Dashboard Seller (Toko)
+                Button(
+                    onClick = {
+                        viewModel.resetSellerActivationState()
+                        showSuccessDialog = false
+                        navController.navigate(Screen.SellerDashboard.route) {
+                            // Tutup halaman verifikasi dari back stack
+                            popUpTo(Screen.Home.route) {
+                                saveState = false // Hancurkan halaman verifikasi
+                            }
+                            launchSingleTop = true
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Ke Dashboard")
+                }
+            },
+            dismissButton = {
+                // Pilihan 2: Kembali ke Profil (untuk lihat status seller di profil)
+                TextButton(
+                    onClick = {
+                        viewModel.resetSellerActivationState()
+                        showSuccessDialog = false
+                        navController.navigate(Screen.Profile.route) {
+                            // Tutup halaman verifikasi dari back stack
+                            popUpTo(Screen.Home.route) {
+                                saveState = false // Hancurkan halaman verifikasi
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                ) {
+                    Text("Ke Profil")
+                }
+            }
+        )
     }
 
     val isActivating = activationState is UiState.Loading
@@ -108,11 +168,11 @@ fun VerifySellerScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             VerificationDetailItem("Nama", profile.name)
-                            Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
                             VerificationDetailItem("Email", profile.email)
-                            Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
                             VerificationDetailItem("Nomor HP", profile.phoneNumber ?: "-")
-                            Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
                             VerificationDetailItem("Alamat", profile.address ?: "-")
                         }
                     }
@@ -129,14 +189,23 @@ fun VerifySellerScreen(
                         )
                         TextButton(onClick = { navController.navigate(Screen.EditProfile.route) }) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Create, contentDescription = "Edit", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                Icon(
+                                    Icons.Default.Create,
+                                    contentDescription = "Edit",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("Edit Profil")
                             }
                         }
                     }
 
-                    Divider(thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 24.dp))
+                    HorizontalDivider(
+                        modifier = Modifier.padding(bottom = 24.dp),
+                        thickness = 1.dp,
+                        color = Color.LightGray.copy(alpha = 0.5f)
+                    )
 
                     // INPUT NAMA TOKO
                     CustomTextField(

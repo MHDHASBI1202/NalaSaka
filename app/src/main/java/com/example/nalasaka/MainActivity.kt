@@ -14,19 +14,19 @@ import androidx.navigation.compose.rememberNavController
 import com.example.nalasaka.ui.navigation.SakaNavigation
 import com.example.nalasaka.ui.theme.NalaSakaTheme
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
-import androidx.compose.material3.Scaffold // Import ini
-import androidx.compose.runtime.getValue // Import ini
-import androidx.navigation.compose.currentBackStackEntryAsState // Import ini
-import com.example.nalasaka.ui.components.SakaBottomBar // Import ini
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.collectAsState // Import ini
+import androidx.compose.runtime.getValue
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.nalasaka.ui.components.SakaBottomBar
 import com.example.nalasaka.ui.navigation.Screen
+import com.example.nalasaka.di.Injection // Import ini
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Mengizinkan konten menjangkau di bawah bilah sistem
         enableEdgeToEdge()
         setContent {
-            // Menerapkan tema NalaSaka
             NalaSakaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -42,25 +42,41 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun NalaSakaApp() {
     val navController = rememberNavController()
-    val viewModelFactory = ViewModelFactory.getInstance(navController.context)
+    val context = navController.context
+    val viewModelFactory = ViewModelFactory.getInstance(context)
+    val repository = Injection.provideRepository(context)
 
-    // Tentukan apakah BottomBar harus ditampilkan (di luar Welcome, Login, Register)
+    // --- LOGIKA UTAMA: Ambil Role User secara Real-time ---
+    val userModel by repository.getUser().collectAsState(
+        initial = com.example.nalasaka.data.pref.UserModel("", "", "", false)
+    )
+    val userRole = userModel.role
+    // -----------------------------------------------------
+
+    // Tentukan apakah BottomBar harus ditampilkan
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomBar = currentRoute in listOf(Screen.Home.route, Screen.Profile.route)
-    // Tambahkan rute Bottom Bar lainnya di sini jika sudah dibuat
+
+    // Tambahkan Screen.SellerDashboard.route ke dalam list showBottomBar
+    val showBottomBar = currentRoute in listOf(
+        Screen.Home.route,
+        Screen.Profile.route,
+        Screen.Produk.route,
+        Screen.TransactionHistory.route,
+        Screen.SellerDashboard.route // Bottom bar muncul di dashboard seller
+    )
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showBottomBar) {
-                SakaBottomBar(navController = navController)
+                // Pass userRole ke BottomBar
+                SakaBottomBar(navController = navController, userRole = userRole)
             }
         }
     ) { paddingValues ->
-        // Memanggil Navigasi Utama Aplikasi
         SakaNavigation(
-            modifier = Modifier.padding(paddingValues), // Penting: berikan paddingValues ke NavHost
+            modifier = Modifier.padding(paddingValues),
             navController = navController,
             factory = viewModelFactory
         )

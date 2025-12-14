@@ -98,4 +98,10 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Field("store_name") storeName: String
     ): ProfileResponse
+
+    // Endpoint untuk mendapatkan produk milik penjual sendiri
+    @GET("saka/my-products")
+    suspend fun getMyProducts(
+        @Header("Authorization") token: String
+    ): AllSakaResponse
 }

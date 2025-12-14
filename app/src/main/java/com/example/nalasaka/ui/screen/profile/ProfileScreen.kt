@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Person
 // Import untuk ikon edit (pensil)
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -210,21 +211,21 @@ fun ProfileDetailsSection(profile: ProfileData, navController: NavHostController
                     label = "Nama",
                     value = profile.name
                 )
-                Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
 
                 // 2. Email (Tidak bisa diedit)
                 ProfileDetailItem(
                     label = "Email",
                     value = profile.email
                 )
-                Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
 
                 // 3. Nomor HP
                 ProfileDetailItem(
                     label = "Nomor HP",
                     value = profile.phoneNumber ?: "Belum ditambahkan"
                 )
-                Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
 
                 // 4. Alamat
                 ProfileDetailItem(

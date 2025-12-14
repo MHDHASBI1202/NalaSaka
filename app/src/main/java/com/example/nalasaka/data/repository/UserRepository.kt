@@ -191,6 +191,11 @@ class UserRepository private constructor(
         return apiService.activateSellerMode("Bearer $token", storeName)
     }
 
+    // Fungsi ambil produk toko sendiri
+    suspend fun getMyProducts(token: String): AllSakaResponse {
+        return apiService.getMyProducts("Bearer $token")
+    }
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

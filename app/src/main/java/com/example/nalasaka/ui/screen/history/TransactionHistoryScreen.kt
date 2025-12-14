@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,7 +19,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.nalasaka.data.remote.response.TransactionItem
-import com.example.nalasaka.ui.components.SakaBottomBar // <--- Penting: Import BottomBar
 import com.example.nalasaka.ui.viewmodel.TransactionViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
@@ -37,55 +35,54 @@ fun TransactionHistoryScreen(
         viewModel.getHistory()
     }
 
-    // --- PERUBAHAN DI SINI: Gunakan Scaffold ---
-    Scaffold(
-        bottomBar = {
-            SakaBottomBar(navController = navController) // Memasang Nav Bar di bawah
-        }
-    ) { innerPadding -> // Padding otomatis agar konten tidak tertutup Nav Bar
+    // Menggunakan Column sebagai container utama, Scaffold dihapus karena sudah dihandle di MainActivity
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp) // Padding internal agar konten tidak menempel ke tepi layar
+    ) {
+        Text(
+            text = "Riwayat Transaksi",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding) // Terapkan padding dari Scaffold
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Riwayat Transaksi",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            when (val state = historyState) {
-                is UiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+        when (val state = historyState) {
+            is UiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
-                is UiState.Success -> {
-                    if (state.data.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Belum ada transaksi.")
-                        }
-                    } else {
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            items(state.data) { transaction ->
-                                TransactionCard(transaction, onReorder = {
-                                    viewModel.checkoutItem(transaction.id)
-                                })
-                            }
+            }
+            is UiState.Success -> {
+                if (state.data.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Belum ada transaksi.")
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(state.data) { transaction ->
+                            TransactionCard(transaction, onReorder = {
+                                viewModel.checkoutItem(transaction.id)
+                            })
                         }
                     }
                 }
-                is UiState.Error -> {
-                    // Tampilkan pesan error yang lebih ramah
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Gagal memuat data: ${state.errorMessage}", color = Color.Red)
-                    }
+            }
+            is UiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "Gagal memuat data: ${state.errorMessage}",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
-
-                UiState.Idle -> TODO()
+            }
+            UiState.Idle -> {
+                // State awal, bisa dikosongkan atau loading
             }
         }
     }

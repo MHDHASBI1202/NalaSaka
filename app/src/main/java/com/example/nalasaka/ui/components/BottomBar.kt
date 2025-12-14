@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -13,38 +13,78 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.nalasaka.ui.navigation.Screen
 
+// Update Sealed Class: Hapus Promo, Tambah Toko
 sealed class BottomBarItem(val route: String, val icon: ImageVector, val label: String) {
     object Home : BottomBarItem(Screen.Home.route, Icons.Default.Home, "Home")
-    object Produk : BottomBarItem("produk_nav", Icons.Default.Inventory2, "Produk")
-    object Promo : BottomBarItem("promo_nav", Icons.Default.Discount, "Promo")
-    object Pesanan : BottomBarItem("transaction_history", Icons.Default.ReceiptLong, "Pesanan")
+    object Produk : BottomBarItem(Screen.Produk.route, Icons.Default.Inventory2, "Produk")
+
+    // PERUBAHAN: Ganti Promo menjadi Toko (Dashboard Seller)
+    object Toko : BottomBarItem(Screen.SellerDashboard.route, Icons.Default.Store, "Toko")
+
+    object Pesanan : BottomBarItem(Screen.TransactionHistory.route, Icons.Default.ReceiptLong, "Pesanan")
     object Profil : BottomBarItem(Screen.Profile.route, Icons.Default.Person, "Profil")
 }
 
 val items = listOf(
     BottomBarItem.Home,
     BottomBarItem.Produk,
-    BottomBarItem.Promo,
+    BottomBarItem.Toko, // Item baru
     BottomBarItem.Pesanan,
     BottomBarItem.Profil,
 )
 
 @Composable
-fun SakaBottomBar(navController: NavHostController) {
+fun SakaBottomBar(
+    navController: NavHostController,
+    userRole: String // Menerima role user dari Parent (MainActivity)
+) {
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
 
-    // Gunakan NavigationBar dari Material3
+    // State untuk kontrol Dialog "Bukan Seller"
+    var showNotSellerDialog by remember { mutableStateOf(false) }
+
+    // Dialog jika user belum jadi seller
+    if (showNotSellerDialog) {
+        AlertDialog(
+            onDismissRequest = { showNotSellerDialog = false },
+            title = { Text("Akses Ditolak") },
+            text = { Text("Anda belum terdaftar sebagai Penjual. Silakan aktifkan mode penjual di menu Profil.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showNotSellerDialog = false
+                        // Arahkan ke Profil agar user bisa klik "Mulai Menjual"
+                        navController.navigate(Screen.Profile.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    Text("Ke Profil")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNotSellerDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
     NavigationBar(
         modifier = Modifier,
-        containerColor = Color.White, // Bottom bar berwarna Putih
+        containerColor = Color.White,
         tonalElevation = 5.dp
     ) {
         items.forEach { item ->
             AddItem(
                 item = item,
                 navController = navController,
-                currentRoute = currentRoute
+                currentRoute = currentRoute,
+                userRole = userRole,
+                onShowDialog = { showNotSellerDialog = true } // Callback untuk memunculkan dialog
             )
         }
     }
@@ -54,11 +94,11 @@ fun SakaBottomBar(navController: NavHostController) {
 fun RowScope.AddItem(
     item: BottomBarItem,
     navController: NavHostController,
-    currentRoute: String?
+    currentRoute: String?,
+    userRole: String,
+    onShowDialog: () -> Unit
 ) {
     val isSelected = currentRoute?.startsWith(item.route) == true
-
-    // Warna aktif menggunakan warna sekunder Yang Mulia (DeepMoss)
     val selectedColor = MaterialTheme.colorScheme.secondary
     val unselectedColor = Color.Gray
 
@@ -71,17 +111,32 @@ fun RowScope.AddItem(
             selectedTextColor = selectedColor,
             unselectedIconColor = unselectedColor,
             unselectedTextColor = unselectedColor,
-            indicatorColor = Color.White // Indikator harus hilang atau transparan
+            indicatorColor = Color.White
         ),
         onClick = {
-            if (currentRoute != item.route) {
-                navController.navigate(item.route) {
-                    // Hindari membangun tumpukan tujuan yang besar di back stack
-                    popUpTo(Screen.Home.route) { saveState = true }
-                    // Hindari salinan tujuan yang sama saat memilih ulang item yang sama
-                    launchSingleTop = true
-                    // Kembalikan status saat memilih ulang item yang sebelumnya dipilih
-                    restoreState = true
+            // LOGIKA UTAMA DISINI
+            if (item == BottomBarItem.Toko) {
+                if (userRole == "seller") {
+                    // Jika seller, navigasi normal ke Dashboard
+                    if (currentRoute != item.route) {
+                        navController.navigate(item.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                } else {
+                    // Jika bukan seller, munculkan Pop Up
+                    onShowDialog()
+                }
+            } else {
+                // Navigasi normal untuk item lainnya
+                if (currentRoute != item.route) {
+                    navController.navigate(item.route) {
+                        popUpTo(Screen.Home.route) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             }
         }
