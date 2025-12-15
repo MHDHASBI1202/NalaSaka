@@ -16,7 +16,10 @@ sealed class Screen(val route: String) {
     // --- TAMBAHAN UNTUK MODUL PROFIL ---
     object Profile : Screen("profile")
     object EditProfile : Screen("edit_profile")
-    object VerifySeller : Screen("verify_seller") // Rute verifikasi seller
+    object VerifySeller : Screen("verify_seller")
+
+    // [NEW] Screen untuk upload sertifikat
+    object UploadCertification : Screen("upload_certification")
 
     // --- NEW: DASHBOARD SELLER (Pengganti Promo) ---
     object SellerDashboard : Screen("seller_dashboard")

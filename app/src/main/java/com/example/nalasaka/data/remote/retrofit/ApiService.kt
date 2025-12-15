@@ -110,6 +110,13 @@ interface ApiService {
         @Field("store_name") storeName: String
     ): ProfileResponse
 
+    @Multipart
+    @POST("user/upload-certification")
+    suspend fun uploadCertification(
+        @Header("Authorization") token: String,
+        @Part file: MultipartBody.Part
+    ): ProfileResponse
+
     @GET("saka/my-products")
     suspend fun getMyProducts(
         @Header("Authorization") token: String

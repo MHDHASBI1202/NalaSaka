@@ -113,6 +113,10 @@ class UserRepository private constructor(
         return apiService.addReview("Bearer $token", sakaId, rating, comment, file)
     }
 
+    suspend fun uploadCertification(token: String, file: MultipartBody.Part): ProfileResponse {
+        return apiService.uploadCertification("Bearer $token", file)
+    }
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

@@ -11,9 +11,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.StarHalf
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material.icons.outlined.StarHalf
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -40,6 +41,7 @@ import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun SuggestedSakaItem(
@@ -102,7 +104,6 @@ fun DetailScreen(
     sakaId: String,
     navController: NavHostController,
     viewModel: DetailViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
-    // Tambahkan AuthViewModel untuk dapat ID User yang login
     authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
     val sakaDetailState by viewModel.sakaDetailState.collectAsState()
@@ -131,14 +132,10 @@ fun DetailScreen(
         when (val state = submitReviewState) {
             is UiState.Success -> {
                 showReviewDialog = false
-                // Tampilkan pesan berbeda jika edit atau baru
                 val msg = if (hasReviewed) "Ulasan diperbarui!" else "Ulasan terkirim!"
                 snackbarHostState.showSnackbar(msg)
-
                 viewModel.resetSubmitState()
-
-                // [FIX Masalah 4] Reload data AGAR Ulasan Muncul
-                viewModel.loadSakaDetail(sakaId)
+                viewModel.loadSakaDetail(sakaId) // Reload data
             }
             is UiState.Error -> {
                 snackbarHostState.showSnackbar(state.errorMessage)
@@ -148,7 +145,6 @@ fun DetailScreen(
         }
     }
 
-    // Dialog Logic
     if (showReviewDialog) {
         AddReviewDialog(
             onDismiss = { showReviewDialog = false },
@@ -156,7 +152,6 @@ fun DetailScreen(
                 viewModel.submitReview(sakaId, rating, comment, null)
             },
             isLoading = submitReviewState is UiState.Loading,
-            // Jika edit, pre-fill data lama
             initialRating = myReview?.rating ?: 0,
             initialComment = myReview?.comment ?: "",
             isEdit = hasReviewed
@@ -179,7 +174,9 @@ fun DetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             BottomAppBar(
-                modifier = Modifier.fillMaxWidth().height(80.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp),
                 containerColor = Color.White,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
@@ -199,7 +196,11 @@ fun DetailScreen(
                     Spacer(Modifier.width(16.dp))
                     PrimaryButton(
                         text = "Beli Sekarang",
-                        onClick = { /* Todo Checkout */ },
+                        onClick = {
+                            viewModel.viewModelScope.launch {
+                                // TODO: Implementasi Checkout
+                            }
+                        },
                         modifier = Modifier.weight(1f).height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = LightSecondary)
                     )
@@ -216,9 +217,7 @@ fun DetailScreen(
                 val totalReviews = reviewData?.totalReviews ?: 0
                 val listReviews = reviewData?.reviews ?: emptyList()
 
-                // [FIX Masalah 4] Logic Pengecekan Ulasan Saya
                 LaunchedEffect(listReviews, currentUserId) {
-                    // Cari review yang userId-nya sama dengan saya
                     myReview = listReviews.find { it.userId == currentUserId }
                     hasReviewed = myReview != null
                 }
@@ -260,12 +259,30 @@ fun DetailScreen(
                                 fontSize = 24.sp, fontWeight = FontWeight.Bold, color = BurntOrangeish
                             )
                         )
-                        Text(
-                            text = saka.name,
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.SemiBold, color = Color.Black
+
+                        // NAMA PRODUK & BADGE VERIFIED (JIKA ADA)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = saka.name,
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.Black
+                                ),
+                                modifier = Modifier.weight(1f, fill = false) // Agar tidak menabrak badge
                             )
-                        )
+
+                            // [FITUR YANG MULIA] Tampilkan Centang Hijau jika Seller Verified
+                            if (saka.isSellerVerified) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Filled.CheckCircle,
+                                    contentDescription = "Verified Seller",
+                                    tint = Color(0xFF4CAF50), // Hijau
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
                         Text(
                             text = "Kategori: ${saka.category}",
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, color = Color.Gray)
@@ -282,6 +299,7 @@ fun DetailScreen(
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
+
                         Text(
                             text = saka.description,
                             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp, color = Color.Black)
@@ -305,7 +323,6 @@ fun DetailScreen(
                                 text = "Ulasan Pembeli",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
-                            // [FIX Masalah 4] Tombol Dinamis
                             TextButton(onClick = { showReviewDialog = true }) {
                                 Text(if (hasReviewed) "Edit Ulasan" else "Tulis Ulasan", color = BurntOrangeish)
                             }
@@ -321,7 +338,6 @@ fun DetailScreen(
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
                         } else {
-                            // Tampilkan 5 review teratas
                             listReviews.take(5).forEach { review ->
                                 ReviewItemCard(review)
                                 Spacer(modifier = Modifier.height(12.dp))
@@ -426,7 +442,7 @@ fun StarRatingDisplay(rating: Double, starSize: androidx.compose.ui.unit.Dp = 20
         for (i in 1..5) {
             val icon = when {
                 i <= rating -> Icons.Filled.Star
-                i - 0.5 <= rating -> Icons.Outlined.StarHalf
+                i - 0.5 <= rating -> Icons.AutoMirrored.Outlined.StarHalf
                 else -> Icons.Outlined.Star
             }
             val tint = if (i <= rating || i - 0.5 <= rating) BurntOrangeish else Color.Gray
@@ -461,8 +477,7 @@ fun AddReviewDialog(
     initialComment: String = "",
     isEdit: Boolean = false
 ) {
-    // [FIX Masalah 3] Rating awal 0 (abu-abu) jika baru, atau load data jika edit
-    var rating by remember { mutableStateOf(initialRating) }
+    var rating by remember { mutableIntStateOf(initialRating) }
     var comment by remember { mutableStateOf(initialComment) }
 
     AlertDialog(

@@ -10,6 +10,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
 
@@ -23,13 +27,21 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
     private val _sellerActivationState = MutableStateFlow<UiState<ProfileData>>(UiState.Idle)
     val sellerActivationState: StateFlow<UiState<ProfileData>> = _sellerActivationState.asStateFlow()
 
+    // State untuk Upload Sertifikasi
+    private val _uploadCertState = MutableStateFlow<UiState<String>>(UiState.Idle)
+    val uploadCertState: StateFlow<UiState<String>> = _uploadCertState.asStateFlow()
+
     init {
         loadUserProfile()
     }
 
     fun loadUserProfile() {
         viewModelScope.launch {
-            _profileState.value = UiState.Loading
+            // Jangan set Loading jika data sudah ada agar tidak flickering saat kembali
+            if (_profileState.value is UiState.Idle || _profileState.value is UiState.Error) {
+                _profileState.value = UiState.Loading
+            }
+
             try {
                 val user = repository.getUser().first()
                 if (user.isLogin) {
@@ -70,7 +82,6 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    // --- BAGIAN INI YANG SEBELUMNYA KURANG LENGKAP ---
     fun activateSellerMode(storeName: String) {
         viewModelScope.launch {
             _sellerActivationState.value = UiState.Loading
@@ -80,21 +91,17 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
                     val response = repository.activateSellerMode(user.token, storeName)
 
                     if (!response.error) {
-                        // 1. Update State UI
                         _sellerActivationState.value = UiState.Success(response.user)
 
-                        // 2. [FATAL FIX] SIMPAN ROLE 'SELLER' KE MEMORI HP (DATASTORE)
-                        // Tanpa ini, BottomBar akan terus memblokir akses karena mengira masih 'customer'
                         val updatedUser = UserModel(
                             userId = response.user.userId,
                             name = response.user.name,
                             token = user.token,
                             isLogin = true,
-                            role = "seller" // Paksa simpan sebagai seller
+                            role = "seller"
                         )
                         repository.saveUser(updatedUser)
 
-                        // 3. Update data profile di viewmodel ini juga
                         _profileState.value = UiState.Success(response.user)
                     } else {
                         _sellerActivationState.value = UiState.Error(response.message)
@@ -106,11 +113,44 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
+    // [FUNGSI YANG DIPERBAIKI]
+    fun uploadCertification(file: File) {
+        viewModelScope.launch {
+            _uploadCertState.value = UiState.Loading
+            try {
+                val user = repository.getUser().first()
+                if (user.isLogin) {
+                    val requestImageFile = file.asRequestBody("image/jpeg".toMediaType())
+                    val imageMultipart = MultipartBody.Part.createFormData("photo", file.name, requestImageFile)
+
+                    val response = repository.uploadCertification(user.token, imageMultipart)
+
+                    if (!response.error) {
+                        _uploadCertState.value = UiState.Success("Verifikasi berhasil diajukan!")
+
+                        // [CRITICAL FIX] Update profileState secara manual dengan data terbaru dari API Upload
+                        // Ini yang membuat halaman Profil langsung berubah tanpa perlu loading ulang
+                        _profileState.value = UiState.Success(response.user)
+
+                    } else {
+                        _uploadCertState.value = UiState.Error(response.message)
+                    }
+                }
+            } catch (e: Exception) {
+                _uploadCertState.value = UiState.Error(e.message ?: "Gagal upload dokumen")
+            }
+        }
+    }
+
     fun resetUpdateState() {
         _updateState.value = UiState.Idle
     }
 
     fun resetSellerActivationState() {
         _sellerActivationState.value = UiState.Idle
+    }
+
+    fun resetUploadCertState() {
+        _uploadCertState.value = UiState.Idle
     }
 }

@@ -53,6 +53,10 @@ data class SakaItem(
     @field:SerializedName("sellerId")
     val sellerId: String? = null,
 
+    // [NEW] Tambahkan field ini (Nanti backend menyusul)
+    @field:SerializedName("isSellerVerified")
+    val isSellerVerified: Boolean = false,
+
     @field:SerializedName("category")
     val category: String = "Umum"
 )
@@ -162,7 +166,11 @@ data class ProfileData(
     val role: String = "customer",
 
     @field:SerializedName("storeName")
-    val storeName: String? = null
+    val storeName: String? = null,
+
+    // [NEW] Tambahkan ini
+    @field:SerializedName("verificationStatus")
+    val verificationStatus: String = "none"
 )
 
 // Response untuk Mendapatkan Detail Profil Pengguna

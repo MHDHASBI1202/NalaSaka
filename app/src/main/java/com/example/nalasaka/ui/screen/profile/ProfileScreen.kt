@@ -10,8 +10,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,6 +35,7 @@ import com.example.nalasaka.ui.viewmodel.ProfileViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import com.example.nalasaka.data.remote.response.ProfileData
+import com.example.nalasaka.ui.theme.BurntOrangeish
 
 @Composable
 fun getAuthViewModel(navController: NavHostController): AuthViewModel {
@@ -49,7 +52,7 @@ fun ProfileScreen(
     val authViewModel = getAuthViewModel(navController)
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // [FIX Masalah 1] Force reload profil setiap kali layar ini dibuka/aktif
+    // [FIX] Force reload profil setiap kali layar ini dibuka/aktif
     LaunchedEffect(Unit) {
         viewModel.loadUserProfile()
     }
@@ -127,8 +130,9 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Hanya tampilkan tombol jika user BUKAN seller
+                    // LOGIKA TOMBOL STATUS & VERIFIKASI
                     if (profile.role != "seller") {
+                        // Kalau bukan seller -> Tawarkan jadi seller
                         TextButton(onClick = {
                             navController.navigate(Screen.VerifySeller.route)
                         }) {
@@ -138,6 +142,37 @@ fun ProfileScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
+                        }
+                    } else {
+                        // Kalau SUDAH seller, cek status verifikasi
+                        when (profile.verificationStatus) {
+                            "verified" -> {
+                                // Sudah Verified -> Tampilkan Badge
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF4CAF50)) // Hijau
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Akun Penjual Terverifikasi", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            "pending" -> {
+                                Text("Menunggu Verifikasi...", color = Color.Gray)
+                            }
+                            else -> { // 'none' atau 'rejected'
+                                // Belum Verified -> Tawarkan Upload Dokumen
+                                TextButton(onClick = {
+                                    navController.navigate(Screen.UploadCertification.route)
+                                }) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.VerifiedUser, null, tint = BurntOrangeish)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Verifikasi Akun (Upload Dokumen)",
+                                            color = BurntOrangeish,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 

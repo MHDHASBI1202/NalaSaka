@@ -117,6 +117,17 @@ fun SakaNavigation(
             VerifySellerScreen(navController = navController)
         }
 
+        // VERIFY SELLER SCREEN (Aktivasi Toko)
+        composable(Screen.VerifySeller.route) {
+            VerifySellerScreen(navController = navController)
+        }
+
+        // [NEW] UPLOAD CERTIFICATION SCREEN
+        composable(Screen.UploadCertification.route) {
+            // Import screen ini manual jika merah: com.example.nalasaka.ui.screen.profile.UploadCertificationScreen
+            com.example.nalasaka.ui.screen.profile.UploadCertificationScreen(navController = navController)
+        }
+
         // --- NEW: DASHBOARD SELLER ---
         composable(Screen.SellerDashboard.route) {
             SellerDashboardScreen(
