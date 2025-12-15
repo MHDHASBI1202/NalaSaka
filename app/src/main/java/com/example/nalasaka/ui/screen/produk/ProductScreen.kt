@@ -50,7 +50,7 @@ fun ProductScreen(
 
     // Load data jika belum ada
     LaunchedEffect(userModel.isLogin) {
-        if (userModel.isLogin && (sakaState is UiState.Idle || sakaState is UiState.Error)) {
+        if (userModel.isLogin) {
             viewModel.loadSaka(userModel.token)
         }
     }

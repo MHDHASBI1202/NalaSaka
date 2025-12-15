@@ -6,10 +6,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.* // <-- PENTING: Mengimpor semua ikon Filled
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.StarHalf
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.example.nalasaka.data.remote.response.ReviewItem
 import com.example.nalasaka.data.remote.response.SakaItem
 import com.example.nalasaka.ui.components.PrimaryButton
 import com.example.nalasaka.ui.components.formatRupiah
@@ -33,16 +38,15 @@ import com.example.nalasaka.ui.theme.LightSecondary
 import com.example.nalasaka.ui.viewmodel.DetailViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
-import com.example.nalasaka.ui.navigation.Screen // Import Screen untuk navigasi
+import com.example.nalasaka.ui.navigation.Screen
+import com.example.nalasaka.ui.viewmodel.AuthViewModel
 
-// --- Komponen Produk Serupa (Simulasi Item Card Sesuai Gambar) ---
 @Composable
 fun SuggestedSakaItem(
     saka: SakaItem,
     onClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Mereplikasi tampilan kartu produk serupa
     Column(
         modifier = modifier
             .width(110.dp)
@@ -50,7 +54,6 @@ fun SuggestedSakaItem(
             .clip(RoundedCornerShape(8.dp))
             .background(Color.White)
     ) {
-        // Frame/Placeholder Gambar Produk Serupa
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -59,19 +62,17 @@ fun SuggestedSakaItem(
                 .padding(4.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Kita gunakan AsyncImage jika tersedia, atau Box jika tidak
             AsyncImage(
                 model = saka.photoUrl,
                 contentDescription = saka.name,
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFFE0E0E0)), // Warna abu-abu muda di gambar
-                contentScale = ContentScale.Crop // Gunakan Crop agar pas di frame
+                    .background(Color(0xFFE0E0E0)),
+                contentScale = ContentScale.Crop
             )
         }
 
-        // Detail Teks
         Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
             Text(
                 text = saka.name,
@@ -85,7 +86,7 @@ fun SuggestedSakaItem(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "${formatRupiah(saka.price)}", // Tampilkan harga yang diformat
+                text = formatRupiah(saka.price),
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 10.sp,
                     color = Color.Gray
@@ -94,48 +95,92 @@ fun SuggestedSakaItem(
         }
     }
 }
-// --- Akhir Komponen Produk Serupa ---
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
     sakaId: String,
     navController: NavHostController,
-    viewModel: DetailViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
+    viewModel: DetailViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
+    // Tambahkan AuthViewModel untuk dapat ID User yang login
+    authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
     val sakaDetailState by viewModel.sakaDetailState.collectAsState()
-    // Ambil state produk serupa
     val relatedProductsState by viewModel.relatedProductsState.collectAsState()
+    val reviewState by viewModel.reviewState.collectAsState()
+    val submitReviewState by viewModel.submitReviewState.collectAsState()
+
+    // Ambil data User Login
+    val userSession by authViewModel.userSession.collectAsState(initial = com.example.nalasaka.data.pref.UserModel("","","",false))
+    val currentUserId = userSession.userId
+
+    var showReviewDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // State: Apakah user sudah pernah review?
+    var hasReviewed by remember { mutableStateOf(false) }
+    // State: Menyimpan data review user sebelumnya (untuk pre-fill dialog edit)
+    var myReview: ReviewItem? by remember { mutableStateOf(null) }
 
     LaunchedEffect(sakaId) {
         viewModel.loadSakaDetail(sakaId)
     }
 
+    // Effect untuk memantau hasil submit
+    LaunchedEffect(submitReviewState) {
+        when (val state = submitReviewState) {
+            is UiState.Success -> {
+                showReviewDialog = false
+                // Tampilkan pesan berbeda jika edit atau baru
+                val msg = if (hasReviewed) "Ulasan diperbarui!" else "Ulasan terkirim!"
+                snackbarHostState.showSnackbar(msg)
+
+                viewModel.resetSubmitState()
+
+                // [FIX Masalah 4] Reload data AGAR Ulasan Muncul
+                viewModel.loadSakaDetail(sakaId)
+            }
+            is UiState.Error -> {
+                snackbarHostState.showSnackbar(state.errorMessage)
+                viewModel.resetSubmitState()
+            }
+            else -> {}
+        }
+    }
+
+    // Dialog Logic
+    if (showReviewDialog) {
+        AddReviewDialog(
+            onDismiss = { showReviewDialog = false },
+            onSubmit = { rating, comment ->
+                viewModel.submitReview(sakaId, rating, comment, null)
+            },
+            isLoading = submitReviewState is UiState.Loading,
+            // Jika edit, pre-fill data lama
+            initialRating = myReview?.rating ?: 0,
+            initialComment = myReview?.comment ?: "",
+            isEdit = hasReviewed
+        )
+    }
+
     Scaffold(
         topBar = {
-            // TopAppBar Sederhana dengan Tombol Kembali (panah bawah dari gambar)
             TopAppBar(
-                title = { /* Kosongkan Title */ },
+                title = { },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        // Menggunakan ikon panah ke bawah sesuai dengan gambar
-                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 }
             )
         },
-        // Container color diatur menjadi LightBackground
         containerColor = LightBackground,
-
-        // --- BOTTOM ACTION BAR (SESUAI GAMBAR) ---
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             BottomAppBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp),
-                containerColor = Color.White, // Latar belakang putih sesuai gambar
+                modifier = Modifier.fillMaxWidth().height(80.dp),
+                containerColor = Color.White,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Row(
@@ -143,36 +188,40 @@ fun DetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Kiri: Icon Love (Favorite) dan Cart
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { /* Handle Favorite Click */ }, modifier = Modifier.size(48.dp)) {
+                        IconButton(onClick = { }, modifier = Modifier.size(48.dp)) {
                             Icon(Icons.Default.FavoriteBorder, contentDescription = "Favorite", tint = Color.Black)
                         }
-                        // Icon Keranjang (ShoppingCart)
-                        IconButton(onClick = { /* Handle Cart Click */ }, modifier = Modifier.size(48.dp)) {
+                        IconButton(onClick = { }, modifier = Modifier.size(48.dp)) {
                             Icon(Icons.Default.ShoppingCart, contentDescription = "Add to Cart", tint = Color.Black)
                         }
                     }
-
                     Spacer(Modifier.width(16.dp))
-
-                    // Kanan: Tombol Tambah (Primary Button)
                     PrimaryButton(
-                        text = "Tambah",
-                        onClick = { /* Handle Tambah ke Keranjang */ },
+                        text = "Beli Sekarang",
+                        onClick = { /* Todo Checkout */ },
                         modifier = Modifier.weight(1f).height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = LightSecondary)
                     )
                 }
             }
         }
-        // --- AKHIR BOTTOM ACTION BAR ---
-
     ) { paddingValues ->
         when (val state = sakaDetailState) {
             is UiState.Idle, UiState.Loading -> Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             is UiState.Success -> {
                 val saka = state.data
+                val reviewData = (reviewState as? UiState.Success)?.data
+                val averageRating = reviewData?.averageRating ?: 0.0
+                val totalReviews = reviewData?.totalReviews ?: 0
+                val listReviews = reviewData?.reviews ?: emptyList()
+
+                // [FIX Masalah 4] Logic Pengecekan Ulasan Saya
+                LaunchedEffect(listReviews, currentUserId) {
+                    // Cari review yang userId-nya sama dengan saya
+                    myReview = listReviews.find { it.userId == currentUserId }
+                    hasReviewed = myReview != null
+                }
 
                 Column(
                     modifier = Modifier
@@ -181,81 +230,112 @@ fun DetailScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // --- 1. AREA GAMBAR (Sesuai dengan frame di gambar) ---
+                    // Gambar Produk
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp) // Tinggi frame gambar
-                            .background(Color(0xFFE0E0E0)), // Latar belakang frame
+                            .height(300.dp)
+                            .background(Color(0xFFE0E0E0)),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Gambar produk (AsyncImage)
                         AsyncImage(
                             model = saka.photoUrl,
                             contentDescription = saka.name,
-                            // Tidak menggunakan clip agar gambar penuh di dalam Box
-                            contentScale = ContentScale.Fit
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 
-                    // --- 2. DETAIL UTAMA (Harga, Nama, Rating, Deskripsi) ---
+                    // Detail Teks
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 16.dp)
-                            .background(LightBackground), // Latar belakang LightBackground
+                            .background(LightBackground),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Harga (Rp21.800: font besar, BurntOrangeish)
                         Text(
-                            text = formatRupiah(saka.price ?: 0),
+                            text = formatRupiah(saka.price),
                             style = MaterialTheme.typography.titleLarge.copy(
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = BurntOrangeish
+                                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = BurntOrangeish
                             )
                         )
-                        // Nama Produk (Jeruk: font besar)
                         Text(
                             text = saka.name,
                             style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.Black
+                                fontWeight = FontWeight.SemiBold, color = Color.Black
                             )
                         )
-                        // Kuantitas (1.1 kg/pack: font kecil)
                         Text(
-                            text = "1.1 kg/pack",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 14.sp,
-                                color = Color.Gray
-                            )
+                            text = "Kategori: ${saka.category}",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, color = Color.Gray)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Rating (5/5 (1110 Ulasan))
+                        // Rating Summary
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Filled.Star, contentDescription = "Rating Star", tint = BurntOrangeish, modifier = Modifier.size(20.dp))
+                            StarRatingDisplay(rating = averageRating)
                             Text(
-                                text = "5/5 (1110 Ulasan)",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
+                                text = "$averageRating ($totalReviews Ulasan)",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black, fontWeight = FontWeight.Medium)
                             )
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
 
-                        // Deskripsi (Tekstur daging buahnya...)
+                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = saka.description,
                             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp, color = Color.Black)
                         )
                     }
 
-                    // --- 3. PRODUK SERUPA (REAL DATA DARI API) ---
+                    HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 24.dp))
+
+                    // Bagian Ulasan
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(LightBackground)
-                            .padding(top = 8.dp, bottom = 16.dp),
+                            .padding(horizontal = 24.dp, vertical = 16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Ulasan Pembeli",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                            // [FIX Masalah 4] Tombol Dinamis
+                            TextButton(onClick = { showReviewDialog = true }) {
+                                Text(if (hasReviewed) "Edit Ulasan" else "Tulis Ulasan", color = BurntOrangeish)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (listReviews.isEmpty()) {
+                            Text(
+                                text = "Belum ada ulasan. Jadilah yang pertama mereview!",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        } else {
+                            // Tampilkan 5 review teratas
+                            listReviews.take(5).forEach { review ->
+                                ReviewItemCard(review)
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp)
+
+                    // Produk Serupa
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 16.dp),
                     ) {
                         Text(
                             text = "Produk Serupa",
@@ -264,7 +344,6 @@ fun DetailScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Tampilkan list dari API
                         when(val relatedState = relatedProductsState) {
                             is UiState.Success -> {
                                 LazyRow(
@@ -272,33 +351,150 @@ fun DetailScreen(
                                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     items(relatedState.data) { item ->
-                                        // Gunakan data real dari item
                                         SuggestedSakaItem(saka = item, onClick = {
-                                            // Navigasi ke detail produk tersebut
                                             navController.navigate(Screen.Detail.createRoute(item.id))
                                         })
                                     }
                                 }
                             }
-                            is UiState.Loading -> {
-                                Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                }
-                            }
-                            is UiState.Error -> {
-                                Text(
-                                    text = "Gagal memuat rekomendasi.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Red,
-                                    modifier = Modifier.padding(horizontal = 24.dp)
-                                )
-                            }
-                            else -> { /* Kosong */ }
+                            is UiState.Loading -> Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                            else -> {}
                         }
                     }
                 }
             }
-            is UiState.Error -> Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) { Text(text = "Gagal memuat detail produk: ${state.errorMessage}", color = MaterialTheme.colorScheme.error) }
+            is UiState.Error -> Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) { Text(text = "Gagal memuat: ${state.errorMessage}", color = MaterialTheme.colorScheme.error) }
         }
     }
+}
+
+// --- HELPER COMPONENTS ---
+
+@Composable
+fun ReviewItemCard(review: ReviewItem) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        AsyncImage(
+            model = review.userPhoto,
+            contentDescription = review.userName,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color.LightGray),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                text = review.userName,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StarRatingDisplay(rating = review.rating.toDouble(), starSize = 14.dp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = review.date,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            if (review.comment.isNotEmpty()) {
+                Text(
+                    text = review.comment,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            if (review.imageUrl != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                AsyncImage(
+                    model = review.imageUrl,
+                    contentDescription = "Foto Ulasan",
+                    modifier = Modifier
+                        .height(100.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun StarRatingDisplay(rating: Double, starSize: androidx.compose.ui.unit.Dp = 20.dp) {
+    Row {
+        for (i in 1..5) {
+            val icon = when {
+                i <= rating -> Icons.Filled.Star
+                i - 0.5 <= rating -> Icons.Outlined.StarHalf
+                else -> Icons.Outlined.Star
+            }
+            val tint = if (i <= rating || i - 0.5 <= rating) BurntOrangeish else Color.Gray
+            Icon(imageVector = icon, contentDescription = null, tint = tint, modifier = Modifier.size(starSize))
+        }
+    }
+}
+
+@Composable
+fun StarRatingInput(rating: Int, onRatingChanged: (Int) -> Unit) {
+    Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+        for (i in 1..5) {
+            IconButton(onClick = { onRatingChanged(i) }) {
+                val isSelected = i <= rating
+                Icon(
+                    imageVector = if (isSelected) Icons.Filled.Star else Icons.Outlined.Star,
+                    contentDescription = "Rate $i",
+                    tint = if (isSelected) BurntOrangeish else Color.Gray,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AddReviewDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (Int, String) -> Unit,
+    isLoading: Boolean,
+    initialRating: Int = 0,
+    initialComment: String = "",
+    isEdit: Boolean = false
+) {
+    // [FIX Masalah 3] Rating awal 0 (abu-abu) jika baru, atau load data jika edit
+    var rating by remember { mutableStateOf(initialRating) }
+    var comment by remember { mutableStateOf(initialComment) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (isEdit) "Edit Ulasan" else "Tulis Ulasan") },
+        text = {
+            Column {
+                Text("Berikan rating untuk produk ini:", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                StarRatingInput(rating = rating, onRatingChanged = { rating = it })
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text("Komentar Anda") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { if (rating > 0) onSubmit(rating, comment) },
+                enabled = !isLoading && rating > 0,
+                colors = ButtonDefaults.buttonColors(containerColor = BurntOrangeish)
+            ) {
+                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                else Text(if (isEdit) "Update" else "Kirim")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Batal") }
+        }
+    )
 }

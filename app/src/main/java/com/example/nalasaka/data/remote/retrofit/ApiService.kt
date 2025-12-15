@@ -5,6 +5,7 @@ import com.example.nalasaka.data.remote.response.CheckoutResponse
 import com.example.nalasaka.data.remote.response.DetailSakaResponse
 import com.example.nalasaka.data.remote.response.ProfileResponse
 import com.example.nalasaka.data.remote.response.ResponseSaka
+import com.example.nalasaka.data.remote.response.ReviewApiResponse
 import com.example.nalasaka.data.remote.response.SellerStatsResponse
 import com.example.nalasaka.data.remote.response.TransactionHistoryResponse
 import okhttp3.MultipartBody
@@ -17,7 +18,6 @@ interface ApiService {
     suspend fun register(
         @Field("name") name: String,
         @Field("email") email: String,
-        // --- PERUBAHAN BARU: Tambah no_hp dan alamat ---
         @Field("phone_number") phoneNumber: String,
         @Field("address") address: String,
         @Field("password") password: String,
@@ -34,7 +34,6 @@ interface ApiService {
     @GET("saka")
     suspend fun getAllSaka(
         @Header("Authorization") token: String,
-        // Parameter opsional untuk Pagination
         @Query("page") page: Int? = null,
         @Query("size") size: Int? = null,
     ): AllSakaResponse
@@ -51,39 +50,34 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Part file: MultipartBody.Part,
         @Part("name") name: RequestBody,
-        @Part("category") category: RequestBody, // NEW: Kategori
+        @Part("category") category: RequestBody,
         @Part("description") description: RequestBody,
         @Part("price") price: RequestBody,
         @Part("stock") stock: RequestBody
     ): ResponseSaka
 
-    // NEW: Update Stok
     @FormUrlEncoded
     @PATCH("saka/{id}/stock")
     suspend fun updateStock(
         @Header("Authorization") token: String,
         @Path("id") id: String,
         @Field("stock") stock: Int
-    ): ResponseSaka // Bisa pakai ResponseSaka umum
+    ): ResponseSaka
 
-    // NEW: Hapus Barang
     @DELETE("saka/{id}")
     suspend fun deleteSaka(
         @Header("Authorization") token: String,
         @Path("id") id: String
     ): ResponseSaka
 
-
     // --- MODUL TRANSAKSI & LOGISTIK ---
 
-    // 1. Ambil Riwayat Transaksi
     @GET("transactions")
     suspend fun getTransactionHistory(
         @Header("Authorization") token: String,
         @Query("user_id") userId: String
     ): TransactionHistoryResponse
 
-    // 2. Checkout / Pesan Barang
     @FormUrlEncoded
     @POST("transactions")
     suspend fun checkoutTransaction(
@@ -93,13 +87,12 @@ interface ApiService {
         @Field("quantity") quantity: Int
     ): CheckoutResponse
 
-    // --- TAMBAHAN UNTUK MODUL PROFIL ---
+    // --- MODUL PROFIL ---
     @GET("user/profile")
     suspend fun getUserProfile(
         @Header("Authorization") token: String
     ): ProfileResponse
 
-    // Endpoint untuk update profil (name, phone_number, address, store_name)
     @FormUrlEncoded
     @PATCH("user/profile")
     suspend fun updateUserProfile(
@@ -107,10 +100,9 @@ interface ApiService {
         @Field("name") name: String,
         @Field("phone_number") phoneNumber: String,
         @Field("address") address: String,
-        @Field("store_name") storeName: String? = null // FIX: Menambahkan store_name
+        @Field("store_name") storeName: String? = null
     ): ProfileResponse
 
-    // NEW: Endpoint untuk mengaktifkan mode penjual
     @FormUrlEncoded
     @POST("user/activate-seller")
     suspend fun activateSellerMode(
@@ -118,15 +110,33 @@ interface ApiService {
         @Field("store_name") storeName: String
     ): ProfileResponse
 
-    // Endpoint untuk mendapatkan produk milik penjual sendiri
     @GET("saka/my-products")
     suspend fun getMyProducts(
         @Header("Authorization") token: String
     ): AllSakaResponse
 
-    // NEW: Endpoint untuk Statistik Penjualan Dashboard
     @GET("seller/stats")
     suspend fun getSellerStats(
         @Header("Authorization") token: String
     ): SellerStatsResponse
+
+    // --- MODUL REPUTASI & ANALISIS (NEW) ---
+
+    // 1. Ambil Review berdasarkan Produk
+    @GET("saka/{sakaId}/reviews")
+    suspend fun getProductReviews(
+        @Header("Authorization") token: String,
+        @Path("sakaId") sakaId: String
+    ): ReviewApiResponse
+
+    // 2. Kirim Review Baru (Dengan Foto Opsional)
+    @Multipart
+    @POST("reviews")
+    suspend fun addReview(
+        @Header("Authorization") token: String,
+        @Part("saka_id") sakaId: RequestBody,
+        @Part("rating") rating: RequestBody,
+        @Part("comment") comment: RequestBody,
+        @Part file: MultipartBody.Part? = null // Foto opsional
+    ): ResponseSaka // Kita pakai ResponseSaka umum karena format suksesnya mirip
 }

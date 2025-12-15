@@ -27,7 +27,6 @@ class UserRepository private constructor(
 
     suspend fun login(email: String, password: String): ResponseSaka {
         val response = apiService.login(email, password)
-        // Simpan sesi jika sukses dan loginResult ada
         if (!response.error && response.loginResult != null) {
             saveUser(
                 UserModel(
@@ -54,7 +53,7 @@ class UserRepository private constructor(
         token: String,
         file: MultipartBody.Part,
         name: RequestBody,
-        category: RequestBody, // NEW
+        category: RequestBody,
         description: RequestBody,
         price: RequestBody,
         stock: RequestBody
@@ -62,12 +61,10 @@ class UserRepository private constructor(
         return apiService.addNewSaka("Bearer $token", file, name, category, description, price, stock)
     }
 
-    // NEW
     suspend fun updateStock(token: String, sakaId: String, newStock: Int): ResponseSaka {
         return apiService.updateStock("Bearer $token", sakaId, newStock)
     }
 
-    // NEW
     suspend fun deleteSaka(token: String, sakaId: String): ResponseSaka {
         return apiService.deleteSaka("Bearer $token", sakaId)
     }
@@ -96,9 +93,24 @@ class UserRepository private constructor(
         return apiService.getMyProducts("Bearer $token")
     }
 
-    // NEW: Fungsi ambil statistik
     suspend fun getSellerStats(token: String): SellerStatsResponse {
         return apiService.getSellerStats("Bearer $token")
+    }
+
+    // --- MODUL REPUTASI & ANALISIS (NEW) ---
+
+    suspend fun getProductReviews(token: String, sakaId: String): ReviewApiResponse {
+        return apiService.getProductReviews("Bearer $token", sakaId)
+    }
+
+    suspend fun addReview(
+        token: String,
+        sakaId: RequestBody,
+        rating: RequestBody,
+        comment: RequestBody,
+        file: MultipartBody.Part?
+    ): ResponseSaka {
+        return apiService.addReview("Bearer $token", sakaId, rating, comment, file)
     }
 
     companion object {

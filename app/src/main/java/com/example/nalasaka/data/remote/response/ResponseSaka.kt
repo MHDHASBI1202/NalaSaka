@@ -26,7 +26,6 @@ data class LoginResult(
     @field:SerializedName("token")
     val token: String,
 
-    // Tambahkan field role untuk menangkap data dari API
     @field:SerializedName("role")
     val role: String = "customer"
 )
@@ -54,7 +53,6 @@ data class SakaItem(
     @field:SerializedName("sellerId")
     val sellerId: String? = null,
 
-    // NEW: Kategori
     @field:SerializedName("category")
     val category: String = "Umum"
 )
@@ -140,7 +138,7 @@ data class CheckoutResponse(
     val transactionId: Int? = null
 )
 
-// Data class untuk Detail Profil Pengguna (DIPERBARUI)
+// Data class untuk Detail Profil Pengguna
 data class ProfileData(
     @field:SerializedName("userId")
     val userId: String,
@@ -152,19 +150,19 @@ data class ProfileData(
     val email: String,
 
     @field:SerializedName("photoUrl")
-    val photoUrl: String? = null, // Opsional
+    val photoUrl: String? = null,
 
     @field:SerializedName("phoneNumber")
-    val phoneNumber: String? = null, // Data tambahan
+    val phoneNumber: String? = null,
 
     @field:SerializedName("address")
-    val address: String? = null, // Data tambahan
+    val address: String? = null,
 
     @field:SerializedName("role")
-    val role: String = "customer", // NEW: Default 'customer'
+    val role: String = "customer",
 
     @field:SerializedName("storeName")
-    val storeName: String? = null // NEW: Nama Toko
+    val storeName: String? = null
 )
 
 // Response untuk Mendapatkan Detail Profil Pengguna
@@ -179,9 +177,7 @@ data class ProfileResponse(
     val user: ProfileData
 )
 
-// --- NEW: STATISTIK PENJUALAN ---
-
-// Model Data Stats
+// Model Data Stats (Seller Dashboard)
 data class SellerStats(
     @field:SerializedName("revenue")
     val revenue: Int,
@@ -203,4 +199,55 @@ data class SellerStatsResponse(
 
     @field:SerializedName("stats")
     val stats: SellerStats
+)
+
+// --- BAGIAN BARU: REVIEW & RATING (UPDATED) ---
+
+data class ReviewItem(
+    @field:SerializedName("id")
+    val id: String,
+
+    // [BARU] Field ini Wajib ada untuk membedakan ulasan saya vs orang lain
+    @field:SerializedName("userId")
+    val userId: String,
+
+    @field:SerializedName("userName")
+    val userName: String,
+
+    @field:SerializedName("userPhoto")
+    val userPhoto: String,
+
+    @field:SerializedName("rating")
+    val rating: Int,
+
+    @field:SerializedName("comment")
+    val comment: String,
+
+    @field:SerializedName("imageUrl")
+    val imageUrl: String? = null,
+
+    @field:SerializedName("date")
+    val date: String
+)
+
+data class ReviewData(
+    @field:SerializedName("averageRating")
+    val averageRating: Double,
+
+    @field:SerializedName("totalReviews")
+    val totalReviews: Int,
+
+    @field:SerializedName("reviews")
+    val reviews: List<ReviewItem>
+)
+
+data class ReviewApiResponse(
+    @field:SerializedName("error")
+    val error: Boolean,
+
+    @field:SerializedName("message")
+    val message: String,
+
+    @field:SerializedName("data")
+    val data: ReviewData
 )
