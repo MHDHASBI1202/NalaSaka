@@ -10,10 +10,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -22,14 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.nalasaka.data.remote.response.SakaItem
 import com.example.nalasaka.ui.components.ProductGridItem
 import com.example.nalasaka.ui.navigation.Screen
-import com.example.nalasaka.ui.viewmodel.HomeViewModel // Reusing HomeViewModel for data fetch
+import com.example.nalasaka.ui.viewmodel.HomeViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 
@@ -40,100 +38,124 @@ fun ProductScreen(
 ) {
     val sakaState by viewModel.sakaState.collectAsState()
 
-    // Asumsi: Kita akan memfilter data berdasarkan state lokal
-    var selectedMainFilter by remember { mutableStateOf("Sayur") } // Buah/Sayur
-    var selectedSubFilter by remember { mutableStateOf("Semua") } // Semua, Terlaris, Hijau, dll.
+    // 1. [PERBAIKAN] Default filter adalah "Semua" agar semua data tampil di awal
+    var selectedCategoryFilter by remember { mutableStateOf("Semua") }
+
+    // State untuk Search
     var searchText by remember { mutableStateOf("") }
 
     val userModel by viewModel.repository.getUser().collectAsState(
         initial = com.example.nalasaka.data.pref.UserModel("", "", "", false)
     )
 
+    // Load data jika belum ada
     LaunchedEffect(userModel.isLogin) {
         if (userModel.isLogin && (sakaState is UiState.Idle || sakaState is UiState.Error)) {
             viewModel.loadSaka(userModel.token)
         }
     }
 
-    // Mock Data Filter
-    val mainFilters = listOf("Buah", "Sayur")
-    val subFilters = listOf("Semua", "Terlaris", "Sayuran Hijau", "Import", "Lokal")
+    // Daftar Kategori (Sesuai dengan yang ada di AddSakaScreen)
+    val categories = listOf("Semua", "Sayur", "Buah", "Rempah", "Beras/Biji-bijian", "Lainnya")
 
-    // Filter Data List
-    val filteredList = remember(sakaState, selectedMainFilter, selectedSubFilter) {
+    // 2. [PERBAIKAN] Logika Filter menggunakan data 'category' dari Database
+    val filteredList = remember(sakaState, selectedCategoryFilter, searchText) {
         val list = (sakaState as? UiState.Success<List<SakaItem>>)?.data ?: emptyList()
+
         list.filter { item ->
-            // Implementasi filtering mock sederhana berdasarkan nama
-            val isMainMatch = when (selectedMainFilter) {
-                "Sayur" -> item.name.contains("Bawang", ignoreCase = true) || item.name.contains("Lettuce", ignoreCase = true) || item.name.contains("Pakcoy", ignoreCase = true)
-                "Buah" -> item.name.contains("Tomat", ignoreCase = true) || item.name.contains("Nanas", ignoreCase = true) // Tomat dikategorikan buah
-                else -> true
+            // Filter Kategori
+            val isCategoryMatch = if (selectedCategoryFilter == "Semua") {
+                true // Tampilkan semua
+            } else {
+                // Cocokkan string kategori dari database (ignore case)
+                item.category.equals(selectedCategoryFilter, ignoreCase = true)
             }
-            isMainMatch && (selectedSubFilter == "Semua" || item.name.contains(selectedSubFilter, ignoreCase = true))
+
+            // Filter Pencarian (Nama Produk)
+            val isSearchMatch = if (searchText.isBlank()) {
+                true
+            } else {
+                item.name.contains(searchText, ignoreCase = true)
+            }
+
+            isCategoryMatch && isSearchMatch
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F0E6))) { // Light Background seperti di gambar
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F0E6))) {
         // 1. TOP BAR
-        ProductTopBar(navController = navController, searchText = searchText, onSearchTextChange = { searchText = it })
+        ProductTopBar(
+            navController = navController,
+            searchText = searchText,
+            onSearchTextChange = { searchText = it }
+        )
 
-        // 2. MAIN CATEGORY FILTER (Buah/Sayur)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            mainFilters.forEach { filter ->
-                CategoryChip(
-                    label = filter,
-                    isSelected = filter == selectedMainFilter,
-                    onClick = { selectedMainFilter = it; selectedSubFilter = "Semua" }, // Reset sub-filter saat kategori utama diganti
-                    isMain = true
-                )
-            }
-        }
-
-        // 3. SUB-CATEGORY FILTER (Semua, Terlaris, dll)
+        // 2. KATEGORI FILTER (Horizontal Scroll)
+        // Menampilkan chip kategori dari database
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(modifier = Modifier.width(8.dp))
-            subFilters.forEach { filter ->
+
+            categories.forEach { category ->
                 CategoryChip(
-                    label = filter,
-                    isSelected = filter == selectedSubFilter,
-                    onClick = { selectedSubFilter = it },
-                    isMain = false
+                    label = category,
+                    isSelected = category == selectedCategoryFilter,
+                    onClick = { selectedCategoryFilter = it }
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // 4. GRID PRODUK
+        // 3. GRID PRODUK
         when (sakaState) {
-            UiState.Idle, UiState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            is UiState.Error -> Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) { Text("Gagal memuat produk: ${ (sakaState as UiState.Error).errorMessage }", color = MaterialTheme.colorScheme.error) }
+            UiState.Idle, UiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            is UiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "Gagal memuat produk: ${(sakaState as UiState.Error).errorMessage}",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
             is UiState.Success -> {
                 if (filteredList.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Tidak ada produk ditemukan.") }
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Tidak ada produk ditemukan.", fontWeight = FontWeight.Bold)
+                            if (selectedCategoryFilter != "Semua") {
+                                Text("Coba ganti kategori lain.", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
                 } else {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         contentPadding = PaddingValues(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         items(filteredList, key = { it.id }) { saka ->
-                            ProductGridItem(saka = saka, onClick = { sakaId -> navController.navigate(Screen.Detail.createRoute(sakaId)) })
+                            ProductGridItem(
+                                saka = saka,
+                                onClick = { sakaId ->
+                                    navController.navigate(Screen.Detail.createRoute(sakaId))
+                                }
+                            )
                         }
-                        item { Spacer(modifier = Modifier.height(80.dp)) } // Untuk mengimbangi bottom bar
+                        item { Spacer(modifier = Modifier.height(80.dp)) } // Padding bawah untuk BottomBar
                     }
                 }
             }
@@ -141,7 +163,7 @@ fun ProductScreen(
     }
 }
 
-// Komponen Top Bar untuk Halaman Produk
+// Komponen Top Bar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductTopBar(
@@ -154,13 +176,19 @@ fun ProductTopBar(
             TextField(
                 value = searchText,
                 onValueChange = onSearchTextChange,
-                placeholder = { Text("Cari Kebutuhanmu") },
+                placeholder = { Text("Cari produk...") },
                 leadingIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) { // Back button
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                trailingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                trailingIcon = {
+                    if (searchText.isNotEmpty()) {
+                        // Opsi clear text bisa ditambahkan di sini
+                    } else {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
@@ -181,8 +209,6 @@ fun ProductTopBar(
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
     )
-    // Divider di bawah Top Bar (opsional, tergantung desain)
-    // Divider(color = Color.LightGray, thickness = 0.5.dp)
 }
 
 
@@ -191,46 +217,32 @@ fun ProductTopBar(
 fun CategoryChip(
     label: String,
     isSelected: Boolean,
-    onClick: (String) -> Unit,
-    isMain: Boolean = false // Main filter (Buah/Sayur) vs Sub filter (Semua, Terlaris)
+    onClick: (String) -> Unit
 ) {
-    val containerColor = when {
-        isSelected && isMain -> MaterialTheme.colorScheme.primary // Burnt Orangeish
-        !isSelected && isMain -> Color.White
-        isSelected && !isMain -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f) // Deep Moss
-        else -> Color(0xFFEBEBEB) // Greyish-tan
-    }
-
-    val contentColor = when {
-        isSelected && isMain -> Color.White
-        isSelected && !isMain -> MaterialTheme.colorScheme.secondary
-        !isSelected && isMain -> MaterialTheme.colorScheme.onSurface
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-
-    // Placeholder Icon untuk filter utama (Buah/Sayur)
-    val icon = when (label) {
-        "Buah" -> Icons.Default.Fastfood
-        "Sayur" -> Icons.Default.LocalFlorist
-        else -> null
-    }
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.White
+    val contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
 
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(if (isMain) 4.dp else 0.dp),
-        modifier = Modifier.padding(vertical = 4.dp)
+        elevation = CardDefaults.cardElevation(if (isSelected) 4.dp else 1.dp),
+        modifier = Modifier
+            .height(40.dp) // Tinggi fix agar rapi
+            .clickable { onClick(label) }
     ) {
         Row(
             modifier = Modifier
-                .clickable { onClick(label) }
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp)
+                .fillMaxHeight(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
-            if (icon != null) {
-                Icon(icon, contentDescription = label, tint = contentColor, modifier = Modifier.size(20.dp))
+            // Icon kecil opsional jika kategori tertentu
+            if (label == "Semua") {
+                Icon(Icons.Default.Category, null, tint = contentColor, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
             }
+
             Text(
                 text = label,
                 color = contentColor,

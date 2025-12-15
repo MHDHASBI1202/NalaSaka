@@ -5,6 +5,7 @@ import com.example.nalasaka.data.remote.response.CheckoutResponse
 import com.example.nalasaka.data.remote.response.DetailSakaResponse
 import com.example.nalasaka.data.remote.response.ProfileResponse
 import com.example.nalasaka.data.remote.response.ResponseSaka
+import com.example.nalasaka.data.remote.response.SellerStatsResponse
 import com.example.nalasaka.data.remote.response.TransactionHistoryResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -50,8 +51,26 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Part file: MultipartBody.Part,
         @Part("name") name: RequestBody,
+        @Part("category") category: RequestBody, // NEW: Kategori
         @Part("description") description: RequestBody,
-        @Part("price") price: RequestBody // Price as RequestBody
+        @Part("price") price: RequestBody,
+        @Part("stock") stock: RequestBody
+    ): ResponseSaka
+
+    // NEW: Update Stok
+    @FormUrlEncoded
+    @PATCH("saka/{id}/stock")
+    suspend fun updateStock(
+        @Header("Authorization") token: String,
+        @Path("id") id: String,
+        @Field("stock") stock: Int
+    ): ResponseSaka // Bisa pakai ResponseSaka umum
+
+    // NEW: Hapus Barang
+    @DELETE("saka/{id}")
+    suspend fun deleteSaka(
+        @Header("Authorization") token: String,
+        @Path("id") id: String
     ): ResponseSaka
 
 
@@ -104,4 +123,10 @@ interface ApiService {
     suspend fun getMyProducts(
         @Header("Authorization") token: String
     ): AllSakaResponse
+
+    // NEW: Endpoint untuk Statistik Penjualan Dashboard
+    @GET("seller/stats")
+    suspend fun getSellerStats(
+        @Header("Authorization") token: String
+    ): SellerStatsResponse
 }

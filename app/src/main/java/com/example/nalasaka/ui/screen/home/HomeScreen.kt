@@ -24,14 +24,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.nalasaka.R // Import R
-import com.example.nalasaka.ui.components.SakaItem
+import coil.compose.AsyncImage // PENTING: Import Coil
+import com.example.nalasaka.R
+import com.example.nalasaka.data.remote.response.SakaItem
+import com.example.nalasaka.ui.components.formatRupiah
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
 import com.example.nalasaka.ui.viewmodel.HomeViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
-import com.example.nalasaka.data.remote.response.SakaItem as SakaData
 
 @Composable
 fun HomeScreen(
@@ -44,6 +45,7 @@ fun HomeScreen(
         initial = com.example.nalasaka.data.pref.UserModel("", "", "", false)
     )
 
+    // Load data saat masuk halaman jika sudah login
     LaunchedEffect(userModel.isLogin) {
         if (userModel.isLogin) {
             viewModel.loadSaka(userModel.token)
@@ -52,17 +54,16 @@ fun HomeScreen(
         }
     }
 
-    // Hapus Scaffold di sini
-
     // Placeholder untuk Search
     var searchText by remember { mutableStateOf("") }
 
-    val listSaka = (sakaState as? UiState.Success<List<SakaData>>)?.data ?: emptyList()
+    // Ambil data list dari state
+    val listSaka = (sakaState as? UiState.Success<List<SakaItem>>)?.data ?: emptyList()
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp), // Berikan padding bawah
+            contentPadding = PaddingValues(bottom = 80.dp), // Berikan padding bawah agar tidak tertutup BottomBar
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 1. HEADER (Banner dan Search Bar)
@@ -70,50 +71,50 @@ fun HomeScreen(
                 HomeHeader(
                     searchText = searchText,
                     onSearchTextChange = { searchText = it },
-                    onSearch = { /* TODO: Implementasi Search */ },
+                    onSearch = { /* TODO: Implementasi Search ke ProductScreen */ },
                     onRefresh = { viewModel.loadSaka(userModel.token) }
                 )
             }
 
-            // Tampilkan Loading/Error State sebagai item terpusat
+            // Tampilkan Loading/Error State
             item {
                 when (val state = sakaState) {
                     UiState.Idle, UiState.Loading -> Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                     is UiState.Error -> Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        Text(text = "ERROR: ${state.errorMessage}", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                        Text(text = "Gagal memuat: ${state.errorMessage}", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                     }
-                    else -> Unit // Lanjut ke daftar produk di bawah
+                    else -> Unit
                 }
             }
 
-            // 2. Kategori Produk (Promo Terbaik Minggu Ini)
-            item {
-                if (listSaka.isNotEmpty()) {
+            // Jika data ada, tampilkan section produk
+            if (listSaka.isNotEmpty()) {
+                // 2. Kategori Produk (Promo Terbaik Minggu Ini)
+                // Kita ambil 5 data pertama sebagai contoh
+                item {
                     ProductCategorySection(
                         title = "Promo Terbaik Minggu Ini",
-                        sakaList = listSaka,
+                        sakaList = listSaka.take(5),
                         onClickItem = { sakaId -> navController.navigate(Screen.Detail.createRoute(sakaId)) }
                     )
                 }
-            }
 
-            // 3. Kategori Produk (Flash Sale) - Duplikasi untuk tampilan
-            item {
-                if (listSaka.isNotEmpty()) {
+                // 3. Kategori Produk (Flash Sale)
+                // Kita acak urutannya (shuffled) dan ambil 5 untuk variasi
+                item {
                     ProductCategorySection(
                         title = "Flash Sale",
-                        sakaList = listSaka.reversed(), // Contoh data berbeda
+                        sakaList = listSaka.shuffled().take(5),
                         onClickItem = { sakaId -> navController.navigate(Screen.Detail.createRoute(sakaId)) }
                     )
                 }
-            }
 
-            // 4. Kategori Produk (Last Chance)
-            item {
-                if (listSaka.isNotEmpty()) {
+                // 4. Kategori Produk (Last Chance)
+                // Kita ambil 5 data terakhir
+                item {
                     ProductCategorySection(
                         title = "Last Chance",
-                        sakaList = listSaka,
+                        sakaList = listSaka.takeLast(5),
                         onClickItem = { sakaId -> navController.navigate(Screen.Detail.createRoute(sakaId)) }
                     )
                 }
@@ -136,9 +137,11 @@ fun HomeHeader(
             .height(250.dp) // Tinggi Banner
             .background(Color(0xFFE0E0E0)) // Warna background placeholder
     ) {
-        // Banner Promo (Menggunakan Image Placeholder dari file yang diupload)
+        // Banner Promo (Static Resource)
+        // Catatan: Jika ingin banner dari database, perlu buat API khusus Banner.
+        // Untuk saat ini kita gunakan resource gambar statis aplikasi.
         Image(
-            painter = painterResource(id = R.drawable.ic_launcher_background), // Ganti dengan resource Promo.jpg jika sudah diimport
+            painter = painterResource(id = R.drawable.ic_launcher_background),
             contentDescription = "Promo Banner",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -152,7 +155,7 @@ fun HomeHeader(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Bottom // Tempatkan di bawah
         ) {
-            // Placeholder Title/Info di Banner (Misal: Khasus Pengguna Baru)
+            // Teks Info di Banner
             Text("KHUSUS PENGGUNA BARU", color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.align(Alignment.Start))
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -178,7 +181,7 @@ fun HomeHeader(
 @Composable
 fun ProductCategorySection(
     title: String,
-    sakaList: List<SakaData>,
+    sakaList: List<SakaItem>,
     onClickItem: (String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp)) {
@@ -192,7 +195,7 @@ fun ProductCategorySection(
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            TextButton(onClick = { /* TODO: Navigasi Lihat Semua */ }) {
+            TextButton(onClick = { /* TODO: Navigasi Lihat Semua ke ProductScreen */ }) {
                 Text("Lihat Semua", color = MaterialTheme.colorScheme.primary)
             }
         }
@@ -204,7 +207,6 @@ fun ProductCategorySection(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(sakaList, key = { it.id }) { saka ->
-                // Menggunakan SakaItem yang dimodifikasi untuk tampilan horizontal/Card
                 SakaCardHorizontal(saka = saka, onClick = onClickItem)
             }
         }
@@ -213,7 +215,7 @@ fun ProductCategorySection(
 
 @Composable
 fun SakaCardHorizontal(
-    saka: SakaData,
+    saka: SakaItem,
     onClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -231,22 +233,29 @@ fun SakaCardHorizontal(
                 .fillMaxSize()
                 .padding(8.dp)
         ) {
-            // Gambar Produk
+            // Gambar Produk (Menggunakan AsyncImage dari Coil)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFE0E0E0)) // Placeholder warna abu-abu
+                    .background(Color(0xFFE0E0E0)) // Placeholder warna abu-abu saat loading
             ) {
-                // Di sini Anda bisa menggunakan AsyncImage untuk menampilkan saka.photoUrl
-                // Untuk sementara, kita pakai placeholder warna atau gambar dummy
-                SakaItemImagePlaceholder(saka.photoUrl)
+                // [PERBAIKAN UTAMA] Menggunakan AsyncImage untuk memuat URL dari database
+                AsyncImage(
+                    model = saka.photoUrl,
+                    contentDescription = saka.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    // Gambar fallback jika URL error atau loading gagal
+                    error = painterResource(id = R.drawable.ic_launcher_foreground),
+                    placeholder = painterResource(id = R.drawable.ic_launcher_foreground)
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Nama & Deskripsi (Disimpan ke dalam Column)
+            // Nama & Deskripsi
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = saka.name,
@@ -255,15 +264,18 @@ fun SakaCardHorizontal(
                     overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.SemiBold
                 )
+                // Menampilkan Kategori sebagai info tambahan
                 Text(
-                    text = "${(saka.price / 1000.0).toString()} kg/pack", // Contoh dummy weight
+                    text = "Kategori: ${saka.category}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 // Harga Produk
                 Text(
-                    text = com.example.nalasaka.ui.components.formatRupiah(saka.price),
+                    text = formatRupiah(saka.price),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary, // Burnt Orangeish
                     fontWeight = FontWeight.Bold
@@ -271,27 +283,4 @@ fun SakaCardHorizontal(
             }
         }
     }
-}
-
-@Composable
-fun SakaItemImagePlaceholder(url: String) {
-    // Implementasi Coil AsyncImage harusnya ada di sini,
-    // tetapi untuk menjaga kesamaan dengan gambar Yang Mulia,
-    // kita akan menggunakan placeholder sementara.
-    // Jika Anda telah mengintegrasikan Coil, gunakan:
-    /*
-    AsyncImage(
-        model = url,
-        contentDescription = null,
-        modifier = Modifier.fillMaxSize(),
-        contentScale = ContentScale.Crop
-    )
-    */
-    // Placeholder menggunakan Image bawaan Android untuk logo
-    Image(
-        painter = painterResource(id = R.drawable.ic_launcher_foreground),
-        contentDescription = "Product Image Placeholder",
-        modifier = Modifier.fillMaxSize(),
-        contentScale = ContentScale.Fit
-    )
 }

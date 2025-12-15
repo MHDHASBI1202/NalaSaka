@@ -33,6 +33,7 @@ import com.example.nalasaka.ui.theme.LightSecondary
 import com.example.nalasaka.ui.viewmodel.DetailViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
+import com.example.nalasaka.ui.navigation.Screen // Import Screen untuk navigasi
 
 // --- Komponen Produk Serupa (Simulasi Item Card Sesuai Gambar) ---
 @Composable
@@ -84,7 +85,7 @@ fun SuggestedSakaItem(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "${saka.price / 1000} kg/pack",
+                text = "${formatRupiah(saka.price)}", // Tampilkan harga yang diformat
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 10.sp,
                     color = Color.Gray
@@ -104,6 +105,8 @@ fun DetailScreen(
     viewModel: DetailViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
     val sakaDetailState by viewModel.sakaDetailState.collectAsState()
+    // Ambil state produk serupa
+    val relatedProductsState by viewModel.relatedProductsState.collectAsState()
 
     LaunchedEffect(sakaId) {
         viewModel.loadSakaDetail(sakaId)
@@ -247,7 +250,7 @@ fun DetailScreen(
                         )
                     }
 
-                    // --- 3. PRODUK SERUPA (Sesuai Gambar) ---
+                    // --- 3. PRODUK SERUPA (REAL DATA DARI API) ---
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -261,19 +264,36 @@ fun DetailScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 24.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Data dummy untuk simulasi item
-                            val dummySakaList = listOf(
-                                SakaItem(id="sim-1", name = "Strawberry", photoUrl = "", description = "", price = 36900),
-                                SakaItem(id="sim-2", name = "Anggur Hijau", photoUrl = "", description = "", price = 50700),
-                                SakaItem(id="sim-3", name = "Anggur Merah", photoUrl = "", description = "", price = 40100)
-                            )
-                            items(dummySakaList) { item ->
-                                SuggestedSakaItem(saka = item, onClick = { /* Navigasi ke Detail produk serupa */ })
+                        // Tampilkan list dari API
+                        when(val relatedState = relatedProductsState) {
+                            is UiState.Success -> {
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 24.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    items(relatedState.data) { item ->
+                                        // Gunakan data real dari item
+                                        SuggestedSakaItem(saka = item, onClick = {
+                                            // Navigasi ke detail produk tersebut
+                                            navController.navigate(Screen.Detail.createRoute(item.id))
+                                        })
+                                    }
+                                }
                             }
+                            is UiState.Loading -> {
+                                Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                }
+                            }
+                            is UiState.Error -> {
+                                Text(
+                                    text = "Gagal memuat rekomendasi.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Red,
+                                    modifier = Modifier.padding(horizontal = 24.dp)
+                                )
+                            }
+                            else -> { /* Kosong */ }
                         }
                     }
                 }

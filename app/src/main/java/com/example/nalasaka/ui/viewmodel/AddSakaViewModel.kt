@@ -19,37 +19,26 @@ class AddSakaViewModel(private val repository: UserRepository) : ViewModel() {
     private val _uploadState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val uploadState: StateFlow<UiState<String>> = _uploadState.asStateFlow()
 
-    fun uploadSaka(imageFile: File, name: String, description: String, price: Int) {
+    fun uploadSaka(imageFile: File, name: String, category: String, description: String, price: Int, stock: Int) {
         viewModelScope.launch {
             _uploadState.value = UiState.Loading
             try {
-                // 1. Ambil token pengguna
                 val user = repository.getUser().first()
                 if (!user.isLogin) {
-                    _uploadState.value = UiState.Error("Anda harus login untuk mengunggah produk.")
+                    _uploadState.value = UiState.Error("Anda harus login.")
                     return@launch
                 }
 
-                // 2. Siapkan Request Body untuk data multipart (Upload Foto Barang)
                 val requestImageFile = imageFile.asRequestBody("image/jpeg".toMediaType())
-                val imageMultipart = MultipartBody.Part.createFormData(
-                    "photo", // Nama field API untuk file
-                    imageFile.name,
-                    requestImageFile
-                )
+                val imageMultipart = MultipartBody.Part.createFormData("photo", imageFile.name, requestImageFile)
 
-                val nameRequestBody = name.toRequestBody("text/plain".toMediaType())
-                val descriptionRequestBody = description.toRequestBody("text/plain".toMediaType())
-                val priceRequestBody = price.toString().toRequestBody("text/plain".toMediaType())
+                val nameReq = name.toRequestBody("text/plain".toMediaType())
+                val catReq = category.toRequestBody("text/plain".toMediaType()) // NEW
+                val descReq = description.toRequestBody("text/plain".toMediaType())
+                val priceReq = price.toString().toRequestBody("text/plain".toMediaType())
+                val stockReq = stock.toString().toRequestBody("text/plain".toMediaType())
 
-                // 3. Panggil API
-                val response = repository.addNewSaka(
-                    user.token,
-                    imageMultipart,
-                    nameRequestBody,
-                    descriptionRequestBody,
-                    priceRequestBody
-                )
+                val response = repository.addNewSaka(user.token, imageMultipart, nameReq, catReq, descReq, priceReq, stockReq)
 
                 if (!response.error) {
                     _uploadState.value = UiState.Success(response.message)

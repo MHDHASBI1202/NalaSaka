@@ -24,7 +24,11 @@ data class LoginResult(
     val userId: String,
 
     @field:SerializedName("token")
-    val token: String
+    val token: String,
+
+    // Tambahkan field role untuk menangkap data dari API
+    @field:SerializedName("role")
+    val role: String = "customer"
 )
 
 // Data class untuk satu item produk Tani
@@ -41,9 +45,18 @@ data class SakaItem(
     @field:SerializedName("description")
     val description: String,
 
-    // Asumsi harga adalah integer
     @field:SerializedName("price")
-    val price: Int
+    val price: Int,
+
+    @field:SerializedName("stock")
+    val stock: Int = 0,
+
+    @field:SerializedName("sellerId")
+    val sellerId: String? = null,
+
+    // NEW: Kategori
+    @field:SerializedName("category")
+    val category: String = "Umum"
 )
 
 // Response untuk Mendapatkan Semua Produk
@@ -69,6 +82,7 @@ data class DetailSakaResponse(
     @field:SerializedName("saka")
     val saka: SakaItem
 )
+
 // Model untuk data Tracking (Lokasi & Resi)
 data class TrackingData(
     @field:SerializedName("location")
@@ -163,4 +177,30 @@ data class ProfileResponse(
 
     @field:SerializedName("user")
     val user: ProfileData
+)
+
+// --- NEW: STATISTIK PENJUALAN ---
+
+// Model Data Stats
+data class SellerStats(
+    @field:SerializedName("revenue")
+    val revenue: Int,
+
+    @field:SerializedName("sold")
+    val sold: Int,
+
+    @field:SerializedName("product_count")
+    val productCount: Int
+)
+
+// Response Stats
+data class SellerStatsResponse(
+    @field:SerializedName("error")
+    val error: Boolean,
+
+    @field:SerializedName("message")
+    val message: String,
+
+    @field:SerializedName("stats")
+    val stats: SellerStats
 )

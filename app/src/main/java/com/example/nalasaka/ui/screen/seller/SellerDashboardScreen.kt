@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect // Import LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -25,21 +26,34 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.nalasaka.data.pref.UserModel
+import com.example.nalasaka.ui.components.formatRupiah // Import formatRupiah
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.theme.DeepMoss
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
+import com.example.nalasaka.ui.viewmodel.SellerViewModel // Import SellerViewModel
+import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SellerDashboardScreen(
     navController: NavHostController,
+    // Gunakan SellerViewModel untuk statistik, dan AuthViewModel untuk data user
+    sellerViewModel: SellerViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
     authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
     // Ambil data user untuk menampilkan nama toko
     val userModel by authViewModel.userSession.collectAsState(
         initial = UserModel("", "", "", false)
     )
+
+    // Ambil state statistik dari SellerViewModel
+    val statsState by sellerViewModel.statsState.collectAsState()
+
+    // Load data statistik saat masuk layar
+    LaunchedEffect(Unit) {
+        sellerViewModel.loadDashboardData()
+    }
 
     Scaffold(
         topBar = {
@@ -121,7 +135,7 @@ fun SellerDashboardScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Statistik (Dummy)
+            // Statistik (REAL DATA)
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -135,13 +149,32 @@ fun SellerDashboardScreen(
                         Text("Statistik Penjualan", fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // Tampilkan Data dari State
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        StatItem(label = "Terjual", value = "0")
-                        StatItem(label = "Pendapatan", value = "Rp 0")
-                        StatItem(label = "Dilihat", value = "0")
+                        val stats = (statsState as? UiState.Success)?.data
+
+                        StatItem(label = "Terjual", value = stats?.sold?.toString() ?: "-")
+                        StatItem(label = "Pendapatan", value = if (stats != null) formatRupiah(stats.revenue) else "-")
+                        StatItem(label = "Produk", value = stats?.productCount?.toString() ?: "-") // Ubah Dilihat jadi Produk Aktif
+                    }
+
+                    // Tampilkan Loading Indicator jika sedang memuat
+                    if (statsState is UiState.Loading) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top=16.dp))
+                    }
+
+                    // Tampilkan pesan error jika gagal memuat
+                    if (statsState is UiState.Error) {
+                        Text(
+                            text = "Gagal memuat: ${(statsState as UiState.Error).errorMessage}",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
                     }
                 }
             }
