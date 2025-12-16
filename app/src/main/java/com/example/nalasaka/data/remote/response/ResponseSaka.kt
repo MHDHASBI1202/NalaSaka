@@ -194,7 +194,36 @@ data class SellerStats(
     val sold: Int,
 
     @field:SerializedName("product_count")
-    val productCount: Int
+    val productCount: Int,
+
+    @field:SerializedName("daily_sales")
+    val dailySales: List<DailySalesItem> = emptyList(),
+
+    // [BARU] List statistik per produk
+    @field:SerializedName("product_performance")
+    val productPerformance: List<ProductSalesStat> = emptyList()
+)
+
+data class DailySalesItem(
+    @field:SerializedName("day")
+    val day: String,
+    @field:SerializedName("amount")
+    val amount: Int
+)
+
+// [BARU] Model item statistik produk
+data class ProductSalesStat(
+    @field:SerializedName("name")
+    val name: String,
+
+    @field:SerializedName("image_url")
+    val imageUrl: String,
+
+    @field:SerializedName("sold_qty")
+    val soldQty: Int,
+
+    @field:SerializedName("total_revenue")
+    val totalRevenue: Int
 )
 
 // Response Stats

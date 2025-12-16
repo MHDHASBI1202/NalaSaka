@@ -1,5 +1,8 @@
 package com.example.nalasaka.ui.screen.detail
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,7 +45,9 @@ import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
+import com.example.nalasaka.utils.FileUtils
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun SuggestedSakaItem(
@@ -106,6 +112,7 @@ fun DetailScreen(
     viewModel: DetailViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
     authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
+    val context = LocalContext.current
     val sakaDetailState by viewModel.sakaDetailState.collectAsState()
     val relatedProductsState by viewModel.relatedProductsState.collectAsState()
     val reviewState by viewModel.reviewState.collectAsState()
@@ -123,6 +130,18 @@ fun DetailScreen(
     // State: Menyimpan data review user sebelumnya (untuk pre-fill dialog edit)
     var myReview: ReviewItem? by remember { mutableStateOf(null) }
 
+    // [BARU] State untuk Gambar Ulasan
+    var selectedReviewImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Launcher Galeri
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedReviewImageUri = uri
+        }
+    }
+
     LaunchedEffect(sakaId) {
         viewModel.loadSakaDetail(sakaId)
     }
@@ -132,6 +151,7 @@ fun DetailScreen(
         when (val state = submitReviewState) {
             is UiState.Success -> {
                 showReviewDialog = false
+                selectedReviewImageUri = null // Reset gambar
                 val msg = if (hasReviewed) "Ulasan diperbarui!" else "Ulasan terkirim!"
                 snackbarHostState.showSnackbar(msg)
                 viewModel.resetSubmitState()
@@ -147,13 +167,22 @@ fun DetailScreen(
 
     if (showReviewDialog) {
         AddReviewDialog(
-            onDismiss = { showReviewDialog = false },
-            onSubmit = { rating, comment ->
-                viewModel.submitReview(sakaId, rating, comment, null)
+            onDismiss = {
+                showReviewDialog = false
+                selectedReviewImageUri = null
+            },
+            onSubmit = { rating, comment, imageUri ->
+                // Konversi Uri ke File jika ada gambar
+                val imageFile = imageUri?.let { FileUtils.uriToFile(it, context) }
+                viewModel.submitReview(sakaId, rating, comment, imageFile)
+            },
+            onSelectImage = {
+                imagePickerLauncher.launch("image/*")
             },
             isLoading = submitReviewState is UiState.Loading,
             initialRating = myReview?.rating ?: 0,
             initialComment = myReview?.comment ?: "",
+            selectedImageUri = selectedReviewImageUri,
             isEdit = hasReviewed
         )
     }
@@ -271,13 +300,13 @@ fun DetailScreen(
                                 modifier = Modifier.weight(1f, fill = false) // Agar tidak menabrak badge
                             )
 
-                            // [PERBAIKAN] Tampilkan Centang jika Seller Verified
+                            // [PERBAIKAN] Tampilkan Centang HIJAU jika Seller Verified
                             if (saka.isSellerVerified) {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Icon(
                                     imageVector = Icons.Filled.CheckCircle,
                                     contentDescription = "Verified Seller",
-                                    tint = Color(0xFF07C91F),
+                                    tint = Color(0xFF07C91F), // HIJAU
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -471,10 +500,12 @@ fun StarRatingInput(rating: Int, onRatingChanged: (Int) -> Unit) {
 @Composable
 fun AddReviewDialog(
     onDismiss: () -> Unit,
-    onSubmit: (Int, String) -> Unit,
+    onSubmit: (Int, String, Uri?) -> Unit, // Tambahkan parameter Uri
+    onSelectImage: () -> Unit, // Callback buka galeri
     isLoading: Boolean,
     initialRating: Int = 0,
     initialComment: String = "",
+    selectedImageUri: Uri? = null, // Parameter gambar terpilih
     isEdit: Boolean = false
 ) {
     var rating by remember { mutableIntStateOf(initialRating) }
@@ -488,7 +519,9 @@ fun AddReviewDialog(
                 Text("Berikan rating untuk produk ini:", style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 StarRatingInput(rating = rating, onRatingChanged = { rating = it })
+
                 Spacer(modifier = Modifier.height(16.dp))
+
                 OutlinedTextField(
                     value = comment,
                     onValueChange = { comment = it },
@@ -496,11 +529,48 @@ fun AddReviewDialog(
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // [BARU] Tombol Tambah Foto
+                Text("Foto Produk (Opsional):", style = MaterialTheme.typography.labelMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (selectedImageUri != null) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = "Preview Foto",
+                            modifier = Modifier
+                                .height(120.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        // Tombol ganti
+                        IconButton(
+                            onClick = onSelectImage,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Ganti")
+                        }
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = onSelectImage,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Tambah Foto")
+                    }
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { if (rating > 0) onSubmit(rating, comment) },
+                onClick = { if (rating > 0) onSubmit(rating, comment, selectedImageUri) },
                 enabled = !isLoading && rating > 0,
                 colors = ButtonDefaults.buttonColors(containerColor = BurntOrangeish)
             ) {

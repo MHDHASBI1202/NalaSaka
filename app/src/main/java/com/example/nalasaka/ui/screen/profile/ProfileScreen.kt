@@ -103,7 +103,7 @@ fun ProfileScreen(
                                     color = Color.Gray
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
-                                // [PERBAIKAN] Tampilkan Nama Toko + Centang jika verified
+                                // [PERBAIKAN] Tampilkan Nama Toko + Centang HIJAU jika verified
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         text = profile.storeName,
@@ -116,7 +116,7 @@ fun ProfileScreen(
                                         Icon(
                                             imageVector = Icons.Filled.CheckCircle,
                                             contentDescription = "Verified Store",
-                                            tint = Color(0xFF07C91F),
+                                            tint = Color(0xFF07C91F), // HIJAU
                                             modifier = Modifier.size(24.dp)
                                         )
                                     }
@@ -161,7 +161,7 @@ fun ProfileScreen(
                             "verified" -> {
                                 // Sudah Verified -> Tampilkan Badge Status Teks
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF07C91F))
+                                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF07C91F)) // HIJAU
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text("Akun Penjual Terverifikasi", color = Color(0xFF07C91F), fontWeight = FontWeight.Bold)
                                 }
@@ -222,7 +222,7 @@ fun ProfileHeader(profile: ProfileData) {
             }
             Spacer(modifier = Modifier.width(16.dp))
 
-            // [PERBAIKAN] Tampilkan Nama + Centang di Header Profil
+            // [PERBAIKAN] Tampilkan Nama + Centang HIJAU di Header Profil
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = profile.name,
@@ -235,7 +235,7 @@ fun ProfileHeader(profile: ProfileData) {
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
                         contentDescription = "Verified User",
-                        tint = Color(0xFF07C91F),
+                        tint = Color(0xFF07C91F), // HIJAU
                         modifier = Modifier.size(24.dp)
                     )
                 }
