@@ -103,12 +103,24 @@ fun ProfileScreen(
                                     color = Color.Gray
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = profile.storeName,
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                // [PERBAIKAN] Tampilkan Nama Toko + Centang jika verified
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = profile.storeName,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    if (profile.verificationStatus == "verified") {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Icon(
+                                            imageVector = Icons.Filled.CheckCircle,
+                                            contentDescription = "Verified Store",
+                                            tint = Color(0xFF07C91F),
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(24.dp))
@@ -147,11 +159,11 @@ fun ProfileScreen(
                         // Kalau SUDAH seller, cek status verifikasi
                         when (profile.verificationStatus) {
                             "verified" -> {
-                                // Sudah Verified -> Tampilkan Badge
+                                // Sudah Verified -> Tampilkan Badge Status Teks
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF4CAF50)) // Hijau
+                                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF07C91F))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Akun Penjual Terverifikasi", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                                    Text("Akun Penjual Terverifikasi", color = Color(0xFF07C91F), fontWeight = FontWeight.Bold)
                                 }
                             }
                             "pending" -> {
@@ -209,12 +221,25 @@ fun ProfileHeader(profile: ProfileData) {
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = profile.name,
-                style = MaterialTheme.typography.headlineSmall,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
+
+            // [PERBAIKAN] Tampilkan Nama + Centang di Header Profil
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = profile.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                if (profile.verificationStatus == "verified") {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = "Verified User",
+                        tint = Color(0xFF07C91F),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
     }
 }

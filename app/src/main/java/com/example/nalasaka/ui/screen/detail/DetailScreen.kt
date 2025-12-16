@@ -271,13 +271,13 @@ fun DetailScreen(
                                 modifier = Modifier.weight(1f, fill = false) // Agar tidak menabrak badge
                             )
 
-                            // [FITUR YANG MULIA] Tampilkan Centang Hijau jika Seller Verified
+                            // [PERBAIKAN] Tampilkan Centang jika Seller Verified
                             if (saka.isSellerVerified) {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Icon(
                                     imageVector = Icons.Filled.CheckCircle,
                                     contentDescription = "Verified Seller",
-                                    tint = Color(0xFF4CAF50), // Hijau
+                                    tint = Color(0xFF07C91F),
                                     modifier = Modifier.size(24.dp)
                                 )
                             }

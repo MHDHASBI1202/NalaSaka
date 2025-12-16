@@ -9,11 +9,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect // Import LaunchedEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -26,11 +27,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.nalasaka.data.pref.UserModel
-import com.example.nalasaka.ui.components.formatRupiah // Import formatRupiah
+import com.example.nalasaka.ui.components.formatRupiah
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.theme.DeepMoss
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
-import com.example.nalasaka.ui.viewmodel.SellerViewModel // Import SellerViewModel
+import com.example.nalasaka.ui.viewmodel.ProfileViewModel
+import com.example.nalasaka.ui.viewmodel.SellerViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 
@@ -38,21 +40,26 @@ import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 @Composable
 fun SellerDashboardScreen(
     navController: NavHostController,
-    // Gunakan SellerViewModel untuk statistik, dan AuthViewModel untuk data user
     sellerViewModel: SellerViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
-    authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
+    authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
+    // [PERBAIKAN] Tambahkan ProfileViewModel untuk cek status verifikasi
+    profileViewModel: ProfileViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
-    // Ambil data user untuk menampilkan nama toko
+    // Ambil data user session (lokal)
     val userModel by authViewModel.userSession.collectAsState(
         initial = UserModel("", "", "", false)
     )
 
-    // Ambil state statistik dari SellerViewModel
+    // Ambil data profil (remote) untuk verifikasi
+    val profileState by profileViewModel.profileState.collectAsState()
+
+    // Ambil state statistik
     val statsState by sellerViewModel.statsState.collectAsState()
 
-    // Load data statistik saat masuk layar
+    // Load data saat masuk layar
     LaunchedEffect(Unit) {
         sellerViewModel.loadDashboardData()
+        profileViewModel.loadUserProfile() // Load profil untuk cek status verified
     }
 
     Scaffold(
@@ -94,13 +101,27 @@ fun SellerDashboardScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.White.copy(alpha = 0.8f)
                         )
-                        // Tampilkan nama user sebagai nama pemilik toko sementara
-                        Text(
-                            text = userModel.name,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        // [PERBAIKAN] Tampilkan Nama Toko/Penjual + Centang di Dashboard
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = userModel.name,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+
+                            // Cek status verifikasi dari ProfileState
+                            val isVerified = (profileState as? UiState.Success)?.data?.verificationStatus == "verified"
+                            if (isVerified) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Filled.CheckCircle,
+                                    contentDescription = "Verified Seller",
+                                    tint = Color(0xFF07C91F),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -116,7 +137,7 @@ fun SellerDashboardScreen(
 
             // Grid Menu
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Menu 1: Upload Produk (Navigasi ke AddSaka)
+                // Menu 1: Upload Produk
                 SellerMenuCard(
                     title = "Upload Barang",
                     icon = Icons.Default.Add,
@@ -124,18 +145,18 @@ fun SellerDashboardScreen(
                     onClick = { navController.navigate(Screen.AddSaka.route) }
                 )
 
-                // Menu 2: Stok Produk (SEKARANG SUDAH ADA NAVIGASI)
+                // Menu 2: Stok Produk
                 SellerMenuCard(
                     title = "Stok Produk",
                     icon = Icons.Default.Inventory,
                     modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate(Screen.SellerInventory.route) } // FIX: Navigasi aktif
+                    onClick = { navController.navigate(Screen.SellerInventory.route) }
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Statistik (REAL DATA)
+            // Statistik
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -150,7 +171,6 @@ fun SellerDashboardScreen(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Tampilkan Data dari State
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -159,15 +179,13 @@ fun SellerDashboardScreen(
 
                         StatItem(label = "Terjual", value = stats?.sold?.toString() ?: "-")
                         StatItem(label = "Pendapatan", value = if (stats != null) formatRupiah(stats.revenue) else "-")
-                        StatItem(label = "Produk", value = stats?.productCount?.toString() ?: "-") // Ubah Dilihat jadi Produk Aktif
+                        StatItem(label = "Produk", value = stats?.productCount?.toString() ?: "-")
                     }
 
-                    // Tampilkan Loading Indicator jika sedang memuat
                     if (statsState is UiState.Loading) {
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top=16.dp))
                     }
 
-                    // Tampilkan pesan error jika gagal memuat
                     if (statsState is UiState.Error) {
                         Text(
                             text = "Gagal memuat: ${(statsState as UiState.Error).errorMessage}",
