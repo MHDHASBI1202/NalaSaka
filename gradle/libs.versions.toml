@@ -21,6 +21,7 @@ pagingRuntimeKtx = "3.2.1"
 pagingCompose = "3.3.0-rc01"
 material3IconsExtended = "1.6.0"
 uiText = "1.10.0"
+foundation = "1.10.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -50,6 +51,7 @@ paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtime-ktx", v
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "pagingCompose" }
 material3-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "material3IconsExtended" }
 androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

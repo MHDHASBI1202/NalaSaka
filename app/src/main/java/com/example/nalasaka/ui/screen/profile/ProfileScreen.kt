@@ -1,6 +1,5 @@
 package com.example.nalasaka.ui.screen.profile
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,9 +9,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos // Import icon panah
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Favorite // Import icon Love
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -127,6 +128,36 @@ fun ProfileScreen(
                     }
 
                     ProfileDetailsSection(profile = profile, navController = navController)
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // [BARU] Menu Tambahan: Aktivitas Saya (Wishlist)
+                    Text(
+                        text = "Aktivitas Saya",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column {
+                            // Menu Wishlist
+                            ProfileMenuItem(
+                                icon = Icons.Default.Favorite,
+                                title = "Wishlist Saya",
+                                onClick = { navController.navigate(Screen.Wishlist.route) }
+                            )
+                            // Anda bisa menambahkan menu lain di sini (misal: Riwayat Transaksi via menu)
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(32.dp))
 
@@ -289,5 +320,41 @@ fun ProfileDetailItem(label: String, value: String) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
         }
+    }
+}
+
+// [BARU] Helper Component untuk Item Menu Profil
+@Composable
+fun ProfileMenuItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+            contentDescription = null,
+            tint = Color.Gray,
+            modifier = Modifier.size(16.dp)
+        )
     }
 }

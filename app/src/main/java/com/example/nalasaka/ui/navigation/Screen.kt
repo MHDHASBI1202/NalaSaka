@@ -31,6 +31,9 @@ sealed class Screen(val route: String) {
         fun createRoute(sakaId: String) = "detail/$sakaId"
     }
 
+    // Rute Wishlist
+    object Wishlist : Screen("wishlist")
+
     // Rute untuk Riwayat Transaksi
     object TransactionHistory : Screen("transaction_history")
 }

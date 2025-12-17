@@ -8,6 +8,7 @@ import com.example.nalasaka.data.remote.response.ResponseSaka
 import com.example.nalasaka.data.remote.response.ReviewApiResponse
 import com.example.nalasaka.data.remote.response.SellerStatsResponse
 import com.example.nalasaka.data.remote.response.TransactionHistoryResponse
+import com.example.nalasaka.data.remote.response.WishlistResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
@@ -146,4 +147,23 @@ interface ApiService {
         @Part("comment") comment: RequestBody,
         @Part file: MultipartBody.Part? = null // Foto opsional
     ): ResponseSaka // Kita pakai ResponseSaka umum karena format suksesnya mirip
+
+    // --- MODUL WISHLIST ---
+    @FormUrlEncoded
+    @POST("wishlist/toggle")
+    suspend fun toggleWishlist(
+        @Header("Authorization") token: String,
+        @Field("saka_id") sakaId: String
+    ): WishlistResponse
+
+    @GET("wishlist/check/{sakaId}")
+    suspend fun checkWishlist(
+        @Header("Authorization") token: String,
+        @Path("sakaId") sakaId: String
+    ): WishlistResponse
+
+    @GET("wishlist")
+    suspend fun getMyWishlist(
+        @Header("Authorization") token: String
+    ): AllSakaResponse
 }

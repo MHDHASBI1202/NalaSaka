@@ -288,3 +288,15 @@ data class ReviewApiResponse(
     @field:SerializedName("data")
     val data: ReviewData
 )
+
+// Response untuk Cek/Toggle Wishlist
+data class WishlistResponse(
+    @field:SerializedName("error")
+    val error: Boolean,
+
+    @field:SerializedName("message")
+    val message: String? = null,
+
+    @field:SerializedName("isWishlist")
+    val isWishlist: Boolean
+)

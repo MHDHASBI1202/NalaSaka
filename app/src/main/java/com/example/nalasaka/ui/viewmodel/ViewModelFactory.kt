@@ -31,16 +31,20 @@ class ViewModelFactory(private val repository: UserRepository) : ViewModelProvid
             modelClass.isAssignableFrom(TransactionViewModel::class.java) -> {
                 TransactionViewModel(repository) as T
             }
-            // 6. Seller ViewModel (NEW)
+            // 6. Seller ViewModel
             modelClass.isAssignableFrom(SellerViewModel::class.java) -> {
                 SellerViewModel(repository) as T
             }
-            // --- TAMBAHAN UNTUK MODUL PROFIL ---
+            // 7. Profile ViewModel
             modelClass.isAssignableFrom(ProfileViewModel::class.java) -> {
                 ProfileViewModel(repository) as T
             }
-            // Tambahan: ViewModel untuk fitur spesifik seperti Wishlist, Rating, dll.
-            // ...
+
+            // [PENTING: TAMBAHKAN BAGIAN INI]
+            // 8. Wishlist ViewModel
+            modelClass.isAssignableFrom(WishlistViewModel::class.java) -> {
+                WishlistViewModel(repository) as T
+            }
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: " + modelClass.name)
         }

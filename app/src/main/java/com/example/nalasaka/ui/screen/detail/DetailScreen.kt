@@ -118,6 +118,9 @@ fun DetailScreen(
     val reviewState by viewModel.reviewState.collectAsState()
     val submitReviewState by viewModel.submitReviewState.collectAsState()
 
+    // [BARU] Collect state wishlist dari ViewModel
+    val isWishlist by viewModel.isWishlist.collectAsState()
+
     // Ambil data User Login
     val userSession by authViewModel.userSession.collectAsState(initial = com.example.nalasaka.data.pref.UserModel("","","",false))
     val currentUserId = userSession.userId
@@ -130,7 +133,7 @@ fun DetailScreen(
     // State: Menyimpan data review user sebelumnya (untuk pre-fill dialog edit)
     var myReview: ReviewItem? by remember { mutableStateOf(null) }
 
-    // [BARU] State untuk Gambar Ulasan
+    // State untuk Gambar Ulasan
     var selectedReviewImageUri by remember { mutableStateOf<Uri?>(null) }
 
     // Launcher Galeri
@@ -144,9 +147,10 @@ fun DetailScreen(
 
     LaunchedEffect(sakaId) {
         viewModel.loadSakaDetail(sakaId)
+        // Status wishlist dicek otomatis di dalam loadSakaDetail
     }
 
-    // Effect untuk memantau hasil submit
+    // Effect untuk memantau hasil submit review
     LaunchedEffect(submitReviewState) {
         when (val state = submitReviewState) {
             is UiState.Success -> {
@@ -215,9 +219,29 @@ fun DetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { }, modifier = Modifier.size(48.dp)) {
-                            Icon(Icons.Default.FavoriteBorder, contentDescription = "Favorite", tint = Color.Black)
+
+                        // [UPDATE] Tombol Wishlist (Hati)
+                        IconButton(
+                            onClick = { viewModel.toggleWishlist(sakaId) },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            if (isWishlist) {
+                                // Jika sudah di-wishlist: Ikon Hati Penuh Warna Merah
+                                Icon(
+                                    imageVector = Icons.Filled.Favorite,
+                                    contentDescription = "Hapus dari Wishlist",
+                                    tint = Color.Red
+                                )
+                            } else {
+                                // Jika belum: Ikon Hati Kosong Warna Hitam
+                                Icon(
+                                    imageVector = Icons.Default.FavoriteBorder,
+                                    contentDescription = "Tambah ke Wishlist",
+                                    tint = Color.Black
+                                )
+                            }
                         }
+
                         IconButton(onClick = { }, modifier = Modifier.size(48.dp)) {
                             Icon(Icons.Default.ShoppingCart, contentDescription = "Add to Cart", tint = Color.Black)
                         }
@@ -226,9 +250,7 @@ fun DetailScreen(
                     PrimaryButton(
                         text = "Beli Sekarang",
                         onClick = {
-                            viewModel.viewModelScope.launch {
-                                // TODO: Implementasi Checkout
-                            }
+                            // TODO: Implementasi Checkout Langsung
                         },
                         modifier = Modifier.weight(1f).height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = LightSecondary)
@@ -289,7 +311,7 @@ fun DetailScreen(
                             )
                         )
 
-                        // NAMA PRODUK & BADGE VERIFIED (JIKA ADA)
+                        // NAMA PRODUK & BADGE VERIFIED
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = saka.name,
@@ -297,16 +319,15 @@ fun DetailScreen(
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color.Black
                                 ),
-                                modifier = Modifier.weight(1f, fill = false) // Agar tidak menabrak badge
+                                modifier = Modifier.weight(1f, fill = false)
                             )
 
-                            // [PERBAIKAN] Tampilkan Centang HIJAU jika Seller Verified
                             if (saka.isSellerVerified) {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Icon(
                                     imageVector = Icons.Filled.CheckCircle,
                                     contentDescription = "Verified Seller",
-                                    tint = Color(0xFF07C91F), // HIJAU
+                                    tint = Color(0xFF07C91F),
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -413,7 +434,8 @@ fun DetailScreen(
     }
 }
 
-// --- HELPER COMPONENTS ---
+// ... (Bagian Helper Components: ReviewItemCard, StarRatingDisplay, AddReviewDialog tetap sama, tidak perlu diubah) ...
+// Pastikan kode di bawah ini tetap ada (copy paste dari file lama jika tertinggal)
 
 @Composable
 fun ReviewItemCard(review: ReviewItem) {
@@ -500,12 +522,12 @@ fun StarRatingInput(rating: Int, onRatingChanged: (Int) -> Unit) {
 @Composable
 fun AddReviewDialog(
     onDismiss: () -> Unit,
-    onSubmit: (Int, String, Uri?) -> Unit, // Tambahkan parameter Uri
-    onSelectImage: () -> Unit, // Callback buka galeri
+    onSubmit: (Int, String, Uri?) -> Unit,
+    onSelectImage: () -> Unit,
     isLoading: Boolean,
     initialRating: Int = 0,
     initialComment: String = "",
-    selectedImageUri: Uri? = null, // Parameter gambar terpilih
+    selectedImageUri: Uri? = null,
     isEdit: Boolean = false
 ) {
     var rating by remember { mutableIntStateOf(initialRating) }
@@ -532,7 +554,6 @@ fun AddReviewDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // [BARU] Tombol Tambah Foto
                 Text("Foto Produk (Opsional):", style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -546,7 +567,6 @@ fun AddReviewDialog(
                                 .clip(RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Crop
                         )
-                        // Tombol ganti
                         IconButton(
                             onClick = onSelectImage,
                             modifier = Modifier

@@ -117,6 +117,18 @@ class UserRepository private constructor(
         return apiService.uploadCertification("Bearer $token", file)
     }
 
+    suspend fun toggleWishlist(token: String, sakaId: String): WishlistResponse {
+        return apiService.toggleWishlist("Bearer $token", sakaId)
+    }
+
+    suspend fun checkWishlist(token: String, sakaId: String): WishlistResponse {
+        return apiService.checkWishlist("Bearer $token", sakaId)
+    }
+
+    suspend fun getMyWishlist(token: String): AllSakaResponse {
+        return apiService.getMyWishlist("Bearer $token")
+    }
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

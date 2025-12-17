@@ -141,6 +141,12 @@ fun SakaNavigation(
             SellerInventoryScreen(navController = navController)
         }
 
+        // NEW: WISHLIST SCREEN
+        composable(Screen.Wishlist.route) {
+            // Pastikan import WishlistScreen sudah benar
+            com.example.nalasaka.ui.screen.wishlist.WishlistScreen(navController = navController)
+        }
+
         // 9. TRANSACTION HISTORY SCREEN
         composable(Screen.TransactionHistory.route) {
             TransactionHistoryScreen(
