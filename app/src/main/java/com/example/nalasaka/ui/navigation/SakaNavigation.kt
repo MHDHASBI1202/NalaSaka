@@ -152,6 +152,16 @@ fun SakaNavigation(
             com.example.nalasaka.ui.screen.cart.CartScreen(navController = navController)
         }
 
+        // FORGOT PASSWORD
+        composable(Screen.ForgotPassword.route) {
+            com.example.nalasaka.ui.screen.login.ForgotPasswordScreen(navController = navController)
+        }
+
+        // CHANGE PASSWORD
+        composable(Screen.ChangePassword.route) {
+            com.example.nalasaka.ui.screen.profile.ChangePasswordScreen(navController = navController)
+        }
+
         // 9. TRANSACTION HISTORY SCREEN
         composable(Screen.TransactionHistory.route) {
             TransactionHistoryScreen(

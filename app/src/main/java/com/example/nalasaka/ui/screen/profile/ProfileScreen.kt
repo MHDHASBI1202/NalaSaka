@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos // Im
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Favorite // Import icon Love
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
@@ -156,6 +157,14 @@ fun ProfileScreen(
                                 onClick = { navController.navigate(Screen.Wishlist.route) }
                             )
                             // Anda bisa menambahkan menu lain di sini (misal: Riwayat Transaksi via menu)
+                            // [TAMBAHAN] Menu Ganti Password
+                            // Pastikan import Icons.Default.Lock
+                            HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                            ProfileMenuItem(
+                                icon = androidx.compose.material.icons.Icons.Default.Lock,
+                                title = "Ganti Password",
+                                onClick = { navController.navigate(Screen.ChangePassword.route) }
+                            )
                         }
                     }
 

@@ -137,6 +137,15 @@ class UserRepository private constructor(
     suspend fun checkoutCart(token: String, paymentMethod: String) =
         apiService.checkoutCart("Bearer $token", paymentMethod)
 
+    // --- PASSWORD FEATURES ---
+    suspend fun forgotPassword(email: String) = apiService.forgotPassword(email)
+
+    suspend fun resetPassword(email: String, token: String, pass: String, passConfirm: String) =
+        apiService.resetPassword(email, token, pass, passConfirm)
+
+    suspend fun changePassword(token: String, currentPass: String, newPass: String, newPassConfirm: String) =
+        apiService.changePassword("Bearer $token", currentPass, newPass, newPassConfirm)
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

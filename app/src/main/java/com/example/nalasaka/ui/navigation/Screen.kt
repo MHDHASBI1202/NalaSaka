@@ -38,4 +38,7 @@ sealed class Screen(val route: String) {
 
     // Rute untuk Riwayat Transaksi
     object TransactionHistory : Screen("transaction_history")
+
+    object ForgotPassword : Screen("forgot_password")
+    object ChangePassword : Screen("change_password")
 }

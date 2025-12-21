@@ -153,4 +153,30 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
     fun resetUploadCertState() {
         _uploadCertState.value = UiState.Idle
     }
+
+    private val _changePassState = MutableStateFlow<UiState<String>>(UiState.Idle)
+    val changePassState: StateFlow<UiState<String>> = _changePassState.asStateFlow()
+
+    fun changePassword(currentPass: String, newPass: String, newPassConfirm: String) {
+        viewModelScope.launch {
+            _changePassState.value = UiState.Loading
+            try {
+                val user = repository.getUser().first()
+                if (user.isLogin) {
+                    val response = repository.changePassword(user.token, currentPass, newPass, newPassConfirm)
+                    if (!response.error) {
+                        _changePassState.value = UiState.Success(response.message)
+                    } else {
+                        _changePassState.value = UiState.Error(response.message)
+                    }
+                }
+            } catch (e: Exception) {
+                _changePassState.value = UiState.Error(e.message ?: "Gagal ganti password")
+            }
+        }
+    }
+
+    fun resetChangePassState() {
+        _changePassState.value = UiState.Idle
+    }
 }

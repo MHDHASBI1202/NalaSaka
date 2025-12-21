@@ -125,6 +125,13 @@ fun LoginScreen(
             CustomTextField(value = email, onValueChange = { email = it; emailError = null }, label = "Email", keyboardType = KeyboardType.Email, isError = emailError != null, errorMessage = emailError)
             CustomTextField(value = password, onValueChange = { password = it; passwordError = null }, label = "Password (min 8 karakter)", keyboardType = KeyboardType.Password, isError = passwordError != null, errorMessage = passwordError)
 
+            // [TAMBAHAN] Tombol Lupa Password
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = { navController.navigate(Screen.ForgotPassword.route) }) {
+                    Text("Lupa Password?", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             PrimaryButton(

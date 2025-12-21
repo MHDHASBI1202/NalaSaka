@@ -202,4 +202,31 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Field("payment_method") paymentMethod: String // Tambah ini
     ): ResponseSaka
+
+    // 1. Forgot Password (Request Token)
+    @FormUrlEncoded
+    @POST("password/forgot")
+    suspend fun forgotPassword(
+        @Field("email") email: String
+    ): ResponseSaka
+
+    // 2. Reset Password (Pakai Token)
+    @FormUrlEncoded
+    @POST("password/reset")
+    suspend fun resetPassword(
+        @Field("email") email: String,
+        @Field("token") token: String,
+        @Field("password") password: String,
+        @Field("password_confirmation") passwordConfirmation: String
+    ): ResponseSaka
+
+    // 3. Change Password (Di Profil)
+    @FormUrlEncoded
+    @POST("user/change-password")
+    suspend fun changePassword(
+        @Header("Authorization") token: String,
+        @Field("current_password") currentPass: String,
+        @Field("new_password") newPass: String,
+        @Field("new_password_confirmation") newPassConfirm: String
+    ): ResponseSaka
 }

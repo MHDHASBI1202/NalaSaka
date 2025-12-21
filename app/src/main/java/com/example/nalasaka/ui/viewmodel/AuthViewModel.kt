@@ -70,4 +70,49 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
             repository.logout()
         }
     }
+
+    // State Lupa Password
+    private val _forgotState = MutableStateFlow<UiState<String>>(UiState.Idle)
+    val forgotState: StateFlow<UiState<String>> = _forgotState.asStateFlow()
+
+    // State Reset Password
+    private val _resetPassState = MutableStateFlow<UiState<String>>(UiState.Idle)
+    val resetPassState: StateFlow<UiState<String>> = _resetPassState.asStateFlow()
+
+    fun requestForgotPassword(email: String) {
+        viewModelScope.launch {
+            _forgotState.value = UiState.Loading
+            try {
+                val response = repository.forgotPassword(email)
+                if (!response.error) {
+                    _forgotState.value = UiState.Success(response.message)
+                } else {
+                    _forgotState.value = UiState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _forgotState.value = UiState.Error(e.message ?: "Gagal request token")
+            }
+        }
+    }
+
+    fun executeResetPassword(email: String, token: String, pass: String, passConfirm: String) {
+        viewModelScope.launch {
+            _resetPassState.value = UiState.Loading
+            try {
+                val response = repository.resetPassword(email, token, pass, passConfirm)
+                if (!response.error) {
+                    _resetPassState.value = UiState.Success(response.message)
+                } else {
+                    _resetPassState.value = UiState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _resetPassState.value = UiState.Error(e.message ?: "Gagal reset password")
+            }
+        }
+    }
+
+    fun resetState() {
+        _forgotState.value = UiState.Idle
+        _resetPassState.value = UiState.Idle
+    }
 }
