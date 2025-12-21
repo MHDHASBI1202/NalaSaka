@@ -1,6 +1,7 @@
 package com.example.nalasaka.data.remote.retrofit
 
 import com.example.nalasaka.data.remote.response.AllSakaResponse
+import com.example.nalasaka.data.remote.response.CartResponse
 import com.example.nalasaka.data.remote.response.CheckoutResponse
 import com.example.nalasaka.data.remote.response.DetailSakaResponse
 import com.example.nalasaka.data.remote.response.ProfileResponse
@@ -166,4 +167,33 @@ interface ApiService {
     suspend fun getMyWishlist(
         @Header("Authorization") token: String
     ): AllSakaResponse
+
+    // --- CART ---
+    @GET("cart")
+    suspend fun getCart(@Header("Authorization") token: String): CartResponse
+
+    @FormUrlEncoded
+    @POST("cart")
+    suspend fun addToCart(
+        @Header("Authorization") token: String,
+        @Field("saka_id") sakaId: String,
+        @Field("quantity") quantity: Int
+    ): ResponseSaka
+
+    @FormUrlEncoded
+    @PATCH("cart/{id}")
+    suspend fun updateCartQty(
+        @Header("Authorization") token: String,
+        @Path("id") cartId: Int,
+        @Field("quantity") quantity: Int
+    ): ResponseSaka
+
+    @DELETE("cart/{id}")
+    suspend fun deleteCartItem(
+        @Header("Authorization") token: String,
+        @Path("id") cartId: Int
+    ): ResponseSaka
+
+    @POST("cart/checkout")
+    suspend fun checkoutCart(@Header("Authorization") token: String): ResponseSaka
 }

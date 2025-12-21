@@ -12,8 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.ArrowDownward // Icon Harga Termahal (Turun)
-import androidx.compose.material.icons.filled.ArrowUpward   // Icon Harga Termurah (Naik)
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -144,8 +144,6 @@ fun ProductScreen(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // [HAPUS] Ikon FilterList statis yang tidak bisa ditekan dihapus agar tidak membingungkan
-
             // Chip Kategori (Horizontal Scroll)
             Row(
                 modifier = Modifier
@@ -210,7 +208,6 @@ fun ProductScreen(
     }
 }
 
-// ... (Sisa kode ProductTopBar dan CategoryChip tetap sama seperti sebelumnya)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductTopBar(
@@ -250,7 +247,8 @@ fun ProductTopBar(
             )
         },
         actions = {
-            IconButton(onClick = { /* Navigasi ke Keranjang */ }) {
+            // [UPDATE] Navigasi ke Halaman Keranjang
+            IconButton(onClick = { navController.navigate(Screen.Cart.route) }) {
                 Icon(Icons.Default.ShoppingCart, contentDescription = "Keranjang")
             }
         },

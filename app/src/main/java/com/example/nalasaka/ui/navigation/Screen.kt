@@ -8,7 +8,7 @@ sealed class Screen(val route: String) {
 
     // Rute Modul Produk & Pemasaran (Inti Aplikasi)
     object Home : Screen("home")
-    object AddSaka : Screen("addsaka") // Untuk Upload Foto Barang
+    object AddSaka : Screen("addsaka")
 
     // --- TAMBAHAN UNTUK MODUL PRODUK ---
     object Produk : Screen("produk_nav")
@@ -21,18 +21,20 @@ sealed class Screen(val route: String) {
     // [NEW] Screen untuk upload sertifikat
     object UploadCertification : Screen("upload_certification")
 
-    // --- NEW: DASHBOARD SELLER (Pengganti Promo) ---
+    // --- DASHBOARD SELLER ---
     object SellerDashboard : Screen("seller_dashboard")
-
     object SellerInventory : Screen("seller_inventory")
 
-    // Rute Detail Produk (Memerlukan argumen ID)
+    // Rute Detail Produk
     object Detail : Screen("detail/{sakaId}") {
         fun createRoute(sakaId: String) = "detail/$sakaId"
     }
 
     // Rute Wishlist
     object Wishlist : Screen("wishlist")
+
+    // [BARU] Rute Keranjang
+    object Cart : Screen("cart")
 
     // Rute untuk Riwayat Transaksi
     object TransactionHistory : Screen("transaction_history")

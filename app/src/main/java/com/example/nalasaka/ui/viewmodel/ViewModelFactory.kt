@@ -27,6 +27,10 @@ class ViewModelFactory(private val repository: UserRepository) : ViewModelProvid
             modelClass.isAssignableFrom(AddSakaViewModel::class.java) -> {
                 AddSakaViewModel(repository) as T
             }
+
+            modelClass.isAssignableFrom(CartViewModel::class.java) -> {
+                CartViewModel(repository) as T
+            }
             // 5. Transaction ViewModel (Modul Transaksi & Logistik)
             modelClass.isAssignableFrom(TransactionViewModel::class.java) -> {
                 TransactionViewModel(repository) as T

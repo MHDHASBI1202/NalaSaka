@@ -129,6 +129,12 @@ class UserRepository private constructor(
         return apiService.getMyWishlist("Bearer $token")
     }
 
+    suspend fun getCart(token: String) = apiService.getCart("Bearer $token")
+    suspend fun addToCart(token: String, sakaId: String, qty: Int) = apiService.addToCart("Bearer $token", sakaId, qty)
+    suspend fun updateCartQty(token: String, cartId: Int, qty: Int) = apiService.updateCartQty("Bearer $token", cartId, qty)
+    suspend fun deleteCartItem(token: String, cartId: Int) = apiService.deleteCartItem("Bearer $token", cartId)
+    suspend fun checkoutCart(token: String) = apiService.checkoutCart("Bearer $token")
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

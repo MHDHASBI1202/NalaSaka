@@ -300,3 +300,20 @@ data class WishlistResponse(
     @field:SerializedName("isWishlist")
     val isWishlist: Boolean
 )
+
+// Response untuk Get Cart
+data class CartResponse(
+    @field:SerializedName("error") val error: Boolean,
+    @field:SerializedName("message") val message: String,
+    @field:SerializedName("data") val data: List<CartItem>
+)
+
+data class CartItem(
+    @field:SerializedName("cart_id") val cartId: Int,
+    @field:SerializedName("saka_id") val sakaId: String, // ID Produk
+    @field:SerializedName("name") val name: String,
+    @field:SerializedName("price") val price: Int,
+    @field:SerializedName("photo_url") val photoUrl: String,
+    @field:SerializedName("quantity") val quantity: Int,
+    @field:SerializedName("stock_available") val stockAvailable: Int
+)

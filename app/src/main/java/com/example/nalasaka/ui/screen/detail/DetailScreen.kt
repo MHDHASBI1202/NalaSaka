@@ -29,7 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -45,8 +44,8 @@ import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
+import com.example.nalasaka.ui.viewmodel.CartViewModel // Import CartViewModel
 import com.example.nalasaka.utils.FileUtils
-import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
@@ -110,7 +109,8 @@ fun DetailScreen(
     sakaId: String,
     navController: NavHostController,
     viewModel: DetailViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
-    authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
+    authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
+    cartViewModel: CartViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)) // Tambahkan CartViewModel
 ) {
     val context = LocalContext.current
     val sakaDetailState by viewModel.sakaDetailState.collectAsState()
@@ -118,7 +118,7 @@ fun DetailScreen(
     val reviewState by viewModel.reviewState.collectAsState()
     val submitReviewState by viewModel.submitReviewState.collectAsState()
 
-    // [BARU] Collect state wishlist dari ViewModel
+    // Collect state wishlist dari ViewModel
     val isWishlist by viewModel.isWishlist.collectAsState()
 
     // Ambil data User Login
@@ -218,22 +218,20 @@ fun DetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
 
-                        // [UPDATE] Tombol Wishlist (Hati)
+                        // Tombol Wishlist (Hati)
                         IconButton(
                             onClick = { viewModel.toggleWishlist(sakaId) },
                             modifier = Modifier.size(48.dp)
                         ) {
                             if (isWishlist) {
-                                // Jika sudah di-wishlist: Ikon Hati Penuh Warna Merah
                                 Icon(
                                     imageVector = Icons.Filled.Favorite,
                                     contentDescription = "Hapus dari Wishlist",
                                     tint = Color.Red
                                 )
                             } else {
-                                // Jika belum: Ikon Hati Kosong Warna Hitam
                                 Icon(
                                     imageVector = Icons.Default.FavoriteBorder,
                                     contentDescription = "Tambah ke Wishlist",
@@ -242,15 +240,28 @@ fun DetailScreen(
                             }
                         }
 
-                        IconButton(onClick = { }, modifier = Modifier.size(48.dp)) {
-                            Icon(Icons.Default.ShoppingCart, contentDescription = "Add to Cart", tint = Color.Black)
+                        // Tombol Lihat Keranjang (Hanya Navigasi)
+                        IconButton(
+                            onClick = { navController.navigate(Screen.Cart.route) },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(Icons.Default.ShoppingCart, contentDescription = "Lihat Keranjang", tint = Color.Black)
                         }
                     }
+
                     Spacer(Modifier.width(16.dp))
+
+                    // Tombol Tambah ke Keranjang
                     PrimaryButton(
-                        text = "Beli Sekarang",
+                        text = "+ KERANJANG",
                         onClick = {
-                            // TODO: Implementasi Checkout Langsung
+                            // Panggil ViewModel Cart untuk menambah item
+                            cartViewModel.addToCartFromDetail(sakaId)
+
+                            // Arahkan ke halaman Cart
+                            navController.navigate(Screen.Cart.route) {
+                                launchSingleTop = true
+                            }
                         },
                         modifier = Modifier.weight(1f).height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = LightSecondary)
@@ -433,9 +444,6 @@ fun DetailScreen(
         }
     }
 }
-
-// ... (Bagian Helper Components: ReviewItemCard, StarRatingDisplay, AddReviewDialog tetap sama, tidak perlu diubah) ...
-// Pastikan kode di bawah ini tetap ada (copy paste dari file lama jika tertinggal)
 
 @Composable
 fun ReviewItemCard(review: ReviewItem) {

@@ -147,6 +147,11 @@ fun SakaNavigation(
             com.example.nalasaka.ui.screen.wishlist.WishlistScreen(navController = navController)
         }
 
+        composable(Screen.Cart.route) {
+            // Pastikan import com.example.nalasaka.ui.screen.cart.CartScreen
+            com.example.nalasaka.ui.screen.cart.CartScreen(navController = navController)
+        }
+
         // 9. TRANSACTION HISTORY SCREEN
         composable(Screen.TransactionHistory.route) {
             TransactionHistoryScreen(
