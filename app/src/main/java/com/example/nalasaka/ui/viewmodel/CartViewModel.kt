@@ -17,8 +17,13 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
     private val _checkoutState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val checkoutState: StateFlow<UiState<String>> = _checkoutState
 
+    private val _addToCartState = MutableStateFlow<UiState<String>>(UiState.Idle)
+    val addToCartState: StateFlow<UiState<String>> = _addToCartState
+
     // Hitung total harga lokal
     val totalPrice = MutableStateFlow(0)
+
+    val paymentMethod = MutableStateFlow("CASH")
 
     fun loadCart() {
         viewModelScope.launch {
@@ -61,7 +66,7 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
             _checkoutState.value = UiState.Loading
             try {
                 val user = repository.getUser().first()
-                val response = repository.checkoutCart(user.token)
+                val response = repository.checkoutCart(user.token, paymentMethod.value)
                 if (!response.error) {
                     _checkoutState.value = UiState.Success(response.message)
                     loadCart() // Keranjang jadi kosong
@@ -81,15 +86,27 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
     // Fungsi Add to Cart untuk dipanggil dari Detail Screen
     fun addToCartFromDetail(sakaId: String) {
         viewModelScope.launch {
+            _addToCartState.value = UiState.Loading // Set status loading
             try {
                 val user = repository.getUser().first()
                 if(user.isLogin) {
-                    repository.addToCart(user.token, sakaId, 1)
-                    // Opsional: Beri notifikasi sukses lewat LiveData/Flow lain
+                    val response = repository.addToCart(user.token, sakaId, 1)
+                    if (!response.error) {
+                        _addToCartState.value = UiState.Success("Berhasil ditambahkan ke keranjang")
+                    } else {
+                        _addToCartState.value = UiState.Error(response.message)
+                    }
+                } else {
+                    _addToCartState.value = UiState.Error("Silakan login terlebih dahulu")
                 }
             } catch (e: Exception) {
-                // Error handling
+                _addToCartState.value = UiState.Error(e.message ?: "Gagal menambahkan ke keranjang")
             }
         }
+    }
+
+    // [BARU] Reset state agar snackbar tidak muncul terus menerus saat rotasi layar
+    fun resetAddToCartState() {
+        _addToCartState.value = UiState.Idle
     }
 }

@@ -66,7 +66,7 @@ fun TransactionHistoryScreen(
                     ) {
                         items(state.data) { transaction ->
                             TransactionCard(transaction, onReorder = {
-                                viewModel.checkoutItem(transaction.id)
+                                viewModel.checkoutItem(transaction.sakaId)
                             })
                         }
                     }

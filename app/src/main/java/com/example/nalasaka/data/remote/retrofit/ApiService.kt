@@ -80,13 +80,15 @@ interface ApiService {
         @Query("user_id") userId: String
     ): TransactionHistoryResponse
 
+    // Di Transaction Store (Pesan Ulang)
     @FormUrlEncoded
     @POST("transactions")
     suspend fun checkoutTransaction(
         @Header("Authorization") token: String,
         @Field("user_id") userId: String,
         @Field("saka_id") sakaId: String,
-        @Field("quantity") quantity: Int
+        @Field("quantity") quantity: Int,
+        @Field("payment_method") paymentMethod: String // Tambah ini
     ): CheckoutResponse
 
     // --- MODUL PROFIL ---
@@ -194,6 +196,10 @@ interface ApiService {
         @Path("id") cartId: Int
     ): ResponseSaka
 
+    @FormUrlEncoded
     @POST("cart/checkout")
-    suspend fun checkoutCart(@Header("Authorization") token: String): ResponseSaka
+    suspend fun checkoutCart(
+        @Header("Authorization") token: String,
+        @Field("payment_method") paymentMethod: String // Tambah ini
+    ): ResponseSaka
 }

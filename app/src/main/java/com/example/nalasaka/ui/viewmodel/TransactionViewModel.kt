@@ -42,12 +42,12 @@ class TransactionViewModel(private val repository: UserRepository) : ViewModel()
     }
 
     // Fungsi Checkout / Pesan Ulang
-    fun checkoutItem(sakaId: String, quantity: Int = 1) {
+    fun checkoutItem(sakaId: String, quantity: Int = 1) { // Parameter sakaId, bukan trxId
         viewModelScope.launch {
             _checkoutState.value = UiState.Loading
             try {
                 val user = repository.getUser().first()
-                val response = repository.checkout(user.token, user.userId, sakaId, quantity)
+                val response = repository.checkout(user.token, user.userId, sakaId, quantity, "CASH")
                 if (!response.error) {
                     _checkoutState.value = UiState.Success(response.message)
                     // Refresh history setelah beli

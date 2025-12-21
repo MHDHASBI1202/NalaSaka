@@ -26,9 +26,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog // Import Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -44,7 +46,7 @@ import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import com.example.nalasaka.ui.navigation.Screen
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
-import com.example.nalasaka.ui.viewmodel.CartViewModel // Import CartViewModel
+import com.example.nalasaka.ui.viewmodel.CartViewModel
 import com.example.nalasaka.utils.FileUtils
 import java.io.File
 
@@ -110,15 +112,16 @@ fun DetailScreen(
     navController: NavHostController,
     viewModel: DetailViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
     authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
-    cartViewModel: CartViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)) // Tambahkan CartViewModel
+    cartViewModel: CartViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
     val context = LocalContext.current
     val sakaDetailState by viewModel.sakaDetailState.collectAsState()
     val relatedProductsState by viewModel.relatedProductsState.collectAsState()
     val reviewState by viewModel.reviewState.collectAsState()
     val submitReviewState by viewModel.submitReviewState.collectAsState()
+    val addToCartState by cartViewModel.addToCartState.collectAsState()
 
-    // Collect state wishlist dari ViewModel
+    // Collect state wishlist
     val isWishlist by viewModel.isWishlist.collectAsState()
 
     // Ambil data User Login
@@ -126,17 +129,16 @@ fun DetailScreen(
     val currentUserId = userSession.userId
 
     var showReviewDialog by remember { mutableStateOf(false) }
+
+    // [BARU] State untuk menampilkan Pop-up Sukses Keranjang
+    var showAddToCartSuccessDialog by remember { mutableStateOf(false) }
+
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // State: Apakah user sudah pernah review?
     var hasReviewed by remember { mutableStateOf(false) }
-    // State: Menyimpan data review user sebelumnya (untuk pre-fill dialog edit)
     var myReview: ReviewItem? by remember { mutableStateOf(null) }
-
-    // State untuk Gambar Ulasan
     var selectedReviewImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Launcher Galeri
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -147,19 +149,17 @@ fun DetailScreen(
 
     LaunchedEffect(sakaId) {
         viewModel.loadSakaDetail(sakaId)
-        // Status wishlist dicek otomatis di dalam loadSakaDetail
     }
 
-    // Effect untuk memantau hasil submit review
     LaunchedEffect(submitReviewState) {
         when (val state = submitReviewState) {
             is UiState.Success -> {
                 showReviewDialog = false
-                selectedReviewImageUri = null // Reset gambar
+                selectedReviewImageUri = null
                 val msg = if (hasReviewed) "Ulasan diperbarui!" else "Ulasan terkirim!"
                 snackbarHostState.showSnackbar(msg)
                 viewModel.resetSubmitState()
-                viewModel.loadSakaDetail(sakaId) // Reload data
+                viewModel.loadSakaDetail(sakaId)
             }
             is UiState.Error -> {
                 snackbarHostState.showSnackbar(state.errorMessage)
@@ -169,6 +169,34 @@ fun DetailScreen(
         }
     }
 
+    // [MODIFIKASI] Effect untuk Add To Cart -> Munculkan Dialog
+    LaunchedEffect(addToCartState) {
+        when (val state = addToCartState) {
+            is UiState.Success -> {
+                // Tampilkan Custom Dialog, bukan Snackbar
+                showAddToCartSuccessDialog = true
+                cartViewModel.resetAddToCartState()
+            }
+            is UiState.Error -> {
+                // Jika error, tetap pakai Snackbar agar tidak mengganggu flow
+                snackbarHostState.showSnackbar(state.errorMessage)
+                cartViewModel.resetAddToCartState()
+            }
+            else -> {}
+        }
+    }
+
+    // [BARU] Render Custom Dialog jika state true
+    if (showAddToCartSuccessDialog) {
+        AddToCartSuccessDialog(
+            onDismiss = { showAddToCartSuccessDialog = false },
+            onGoToCart = {
+                showAddToCartSuccessDialog = false
+                navController.navigate(Screen.Cart.route)
+            }
+        )
+    }
+
     if (showReviewDialog) {
         AddReviewDialog(
             onDismiss = {
@@ -176,7 +204,6 @@ fun DetailScreen(
                 selectedReviewImageUri = null
             },
             onSubmit = { rating, comment, imageUri ->
-                // Konversi Uri ke File jika ada gambar
                 val imageFile = imageUri?.let { FileUtils.uriToFile(it, context) }
                 viewModel.submitReview(sakaId, rating, comment, imageFile)
             },
@@ -219,28 +246,17 @@ fun DetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-
-                        // Tombol Wishlist (Hati)
                         IconButton(
                             onClick = { viewModel.toggleWishlist(sakaId) },
                             modifier = Modifier.size(48.dp)
                         ) {
                             if (isWishlist) {
-                                Icon(
-                                    imageVector = Icons.Filled.Favorite,
-                                    contentDescription = "Hapus dari Wishlist",
-                                    tint = Color.Red
-                                )
+                                Icon(Icons.Filled.Favorite, "Hapus dari Wishlist", tint = Color.Red)
                             } else {
-                                Icon(
-                                    imageVector = Icons.Default.FavoriteBorder,
-                                    contentDescription = "Tambah ke Wishlist",
-                                    tint = Color.Black
-                                )
+                                Icon(Icons.Default.FavoriteBorder, "Tambah ke Wishlist", tint = Color.Black)
                             }
                         }
 
-                        // Tombol Lihat Keranjang (Hanya Navigasi)
                         IconButton(
                             onClick = { navController.navigate(Screen.Cart.route) },
                             modifier = Modifier.size(48.dp)
@@ -251,18 +267,12 @@ fun DetailScreen(
 
                     Spacer(Modifier.width(16.dp))
 
-                    // Tombol Tambah ke Keranjang
                     PrimaryButton(
                         text = "+ KERANJANG",
                         onClick = {
-                            // Panggil ViewModel Cart untuk menambah item
                             cartViewModel.addToCartFromDetail(sakaId)
-
-                            // Arahkan ke halaman Cart
-                            navController.navigate(Screen.Cart.route) {
-                                launchSingleTop = true
-                            }
                         },
+                        isLoading = addToCartState is UiState.Loading,
                         modifier = Modifier.weight(1f).height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = LightSecondary)
                     )
@@ -291,7 +301,6 @@ fun DetailScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Gambar Produk
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -307,7 +316,6 @@ fun DetailScreen(
                         )
                     }
 
-                    // Detail Teks
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -322,7 +330,6 @@ fun DetailScreen(
                             )
                         )
 
-                        // NAMA PRODUK & BADGE VERIFIED
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = saka.name,
@@ -350,7 +357,6 @@ fun DetailScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Rating Summary
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             StarRatingDisplay(rating = averageRating)
                             Text(
@@ -369,7 +375,6 @@ fun DetailScreen(
 
                     HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 24.dp))
 
-                    // Bagian Ulasan
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -408,7 +413,6 @@ fun DetailScreen(
 
                     HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp)
 
-                    // Produk Serupa
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -445,6 +449,82 @@ fun DetailScreen(
     }
 }
 
+// [BARU] Composable Custom Dialog Sukses Masuk Keranjang
+@Composable
+fun AddToCartSuccessDialog(
+    onDismiss: () -> Unit,
+    onGoToCart: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(8.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp)
+            ) {
+                // Ikon Centang Besar
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF4CAF50), // Hijau Sukses
+                    modifier = Modifier.size(72.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Berhasil Ditambahkan!",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Produk telah masuk ke keranjang belanja Anda.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = Color.Gray
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Tombol Lanjut Belanja (Outlined/Text)
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Lanjut", color = MaterialTheme.colorScheme.primary)
+                    }
+
+                    // Tombol Ke Keranjang (Primary Color)
+                    Button(
+                        onClick = onGoToCart,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BurntOrangeish)
+                    ) {
+                        Text("Keranjang")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ... (Sisa kode ReviewItemCard, StarRatingDisplay, StarRatingInput, AddReviewDialog tetap sama) ...
 @Composable
 fun ReviewItemCard(review: ReviewItem) {
     Row(modifier = Modifier.fillMaxWidth()) {

@@ -73,8 +73,8 @@ class UserRepository private constructor(
         return apiService.getTransactionHistory("Bearer $token", userId)
     }
 
-    suspend fun checkout(token: String, userId: String, sakaId: String, quantity: Int): CheckoutResponse {
-        return apiService.checkoutTransaction("Bearer $token", userId, sakaId, quantity)
+    suspend fun checkout(token: String, userId: String, sakaId: String, quantity: Int, paymentMethod: String): CheckoutResponse {
+        return apiService.checkoutTransaction("Bearer $token", userId, sakaId, quantity, paymentMethod)
     }
 
     suspend fun getUserProfile(token: String): ProfileResponse {
@@ -133,7 +133,9 @@ class UserRepository private constructor(
     suspend fun addToCart(token: String, sakaId: String, qty: Int) = apiService.addToCart("Bearer $token", sakaId, qty)
     suspend fun updateCartQty(token: String, cartId: Int, qty: Int) = apiService.updateCartQty("Bearer $token", cartId, qty)
     suspend fun deleteCartItem(token: String, cartId: Int) = apiService.deleteCartItem("Bearer $token", cartId)
-    suspend fun checkoutCart(token: String) = apiService.checkoutCart("Bearer $token")
+    // Update fungsi checkoutCart
+    suspend fun checkoutCart(token: String, paymentMethod: String) =
+        apiService.checkoutCart("Bearer $token", paymentMethod)
 
     companion object {
         @Volatile

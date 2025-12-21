@@ -99,6 +99,9 @@ data class TransactionItem(
     @field:SerializedName("id")
     val id: String,
 
+    @field:SerializedName("sakaId") // <-- TAMBAHAN DARI API
+    val sakaId: String,
+
     @field:SerializedName("productName")
     val productName: String,
 
