@@ -42,10 +42,6 @@ fun CartScreen(
     val checkoutState by viewModel.checkoutState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // State untuk Dropdown Pembayaran
-    var expandedPayment by remember { mutableStateOf(false) }
-    val paymentMethods = listOf("CASH" to "Bayar Tunai (COD)", "TRANSFER" to "Transfer Bank", "EWALLET" to "E-Wallet (Dana/OVO)")
-    var selectedPaymentLabel by remember { mutableStateOf(paymentMethods[0].second) }
 
     // [BARU] State untuk Pop-up Sukses Checkout
     var showCheckoutSuccessDialog by remember { mutableStateOf(false) }
@@ -95,43 +91,6 @@ fun CartScreen(
             if (cartState is UiState.Success && (cartState as UiState.Success).data.isNotEmpty()) {
                 Surface(shadowElevation = 8.dp) {
                     Column(modifier = Modifier.padding(16.dp)) {
-
-                        // --- BAGIAN PILIH PEMBAYARAN ---
-                        Text("Metode Pembayaran:", style = MaterialTheme.typography.labelMedium)
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        ExposedDropdownMenuBox(
-                            expanded = expandedPayment,
-                            onExpandedChange = { expandedPayment = !expandedPayment },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            OutlinedTextField(
-                                value = selectedPaymentLabel,
-                                onValueChange = {},
-                                readOnly = true,
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPayment) },
-                                modifier = Modifier.menuAnchor().fillMaxWidth()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = expandedPayment,
-                                onDismissRequest = { expandedPayment = false }
-                            ) {
-                                paymentMethods.forEach { (code, label) ->
-                                    DropdownMenuItem(
-                                        text = { Text(label) },
-                                        onClick = {
-                                            selectedPaymentLabel = label
-                                            viewModel.paymentMethod.value = code // Update ViewModel
-                                            expandedPayment = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // --- BARIS TOTAL & TOMBOL ---
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -146,10 +105,13 @@ fun CartScreen(
                                 )
                             }
                             Button(
-                                onClick = { viewModel.checkout() },
-                                enabled = checkoutState !is UiState.Loading
+                                onClick = {
+                                    // Pastikan rute ini SAMA PERSIS dengan yang didaftarkan di SakaNavigation
+                                    navController.navigate("checkout/$total")
+                                },
+                                shape = RoundedCornerShape(8.dp)
                             ) {
-                                Text(if (checkoutState is UiState.Loading) "Memproses..." else "CHECKOUT")
+                                Text("CHECKOUT")
                             }
                         }
                     }

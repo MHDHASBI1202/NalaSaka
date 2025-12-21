@@ -1,5 +1,6 @@
 package com.example.nalasaka.ui.navigation
 
+import CheckoutScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -160,6 +161,17 @@ fun SakaNavigation(
         // CHANGE PASSWORD
         composable(Screen.ChangePassword.route) {
             com.example.nalasaka.ui.screen.profile.ChangePasswordScreen(navController = navController)
+        }
+
+        composable(
+            route = "checkout/{subtotal}",
+            arguments = listOf(navArgument("subtotal") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val subtotal = backStackEntry.arguments?.getInt("subtotal") ?: 0
+            CheckoutScreen(
+                navController = navController,
+                subtotal = subtotal
+            )
         }
 
         // 9. TRANSACTION HISTORY SCREEN

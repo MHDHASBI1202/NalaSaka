@@ -329,10 +329,11 @@ data class CartResponse(
 
 data class CartItem(
     @field:SerializedName("cart_id") val cartId: Int,
-    @field:SerializedName("saka_id") val sakaId: String, // ID Produk
+    @field:SerializedName("saka_id") val sakaId: String,
     @field:SerializedName("name") val name: String,
     @field:SerializedName("price") val price: Int,
     @field:SerializedName("photo_url") val photoUrl: String,
     @field:SerializedName("quantity") val quantity: Int,
-    @field:SerializedName("stock_available") val stockAvailable: Int
+    @field:SerializedName("stock_available") val stockAvailable: Int,
+    @field:SerializedName("store_name") val storeName: String? = null
 )
