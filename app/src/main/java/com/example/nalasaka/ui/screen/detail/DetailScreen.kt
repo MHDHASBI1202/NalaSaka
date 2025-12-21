@@ -121,6 +121,9 @@ fun DetailScreen(
     val submitReviewState by viewModel.submitReviewState.collectAsState()
     val addToCartState by cartViewModel.addToCartState.collectAsState()
 
+    // [BARU] State Follow dari ViewModel
+    val isFollowing by viewModel.isFollowing.collectAsState()
+
     // Collect state wishlist
     val isWishlist by viewModel.isWishlist.collectAsState()
 
@@ -130,7 +133,7 @@ fun DetailScreen(
 
     var showReviewDialog by remember { mutableStateOf(false) }
 
-    // [BARU] State untuk menampilkan Pop-up Sukses Keranjang
+    // State untuk menampilkan Pop-up Sukses Keranjang
     var showAddToCartSuccessDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -151,6 +154,16 @@ fun DetailScreen(
         viewModel.loadSakaDetail(sakaId)
     }
 
+    // [BARU] Effect untuk mengecek status Follow saat data produk berhasil dimuat
+    LaunchedEffect(sakaDetailState) {
+        if (sakaDetailState is UiState.Success) {
+            val sellerId = (sakaDetailState as UiState.Success).data.sellerId
+            if (sellerId != null) {
+                viewModel.checkFollowStatus(sellerId)
+            }
+        }
+    }
+
     LaunchedEffect(submitReviewState) {
         when (val state = submitReviewState) {
             is UiState.Success -> {
@@ -169,16 +182,16 @@ fun DetailScreen(
         }
     }
 
-    // [MODIFIKASI] Effect untuk Add To Cart -> Munculkan Dialog
+    // Effect untuk Add To Cart -> Munculkan Dialog
     LaunchedEffect(addToCartState) {
         when (val state = addToCartState) {
             is UiState.Success -> {
-                // Tampilkan Custom Dialog, bukan Snackbar
+                // Tampilkan Custom Dialog
                 showAddToCartSuccessDialog = true
                 cartViewModel.resetAddToCartState()
             }
             is UiState.Error -> {
-                // Jika error, tetap pakai Snackbar agar tidak mengganggu flow
+                // Jika error, pakai Snackbar
                 snackbarHostState.showSnackbar(state.errorMessage)
                 cartViewModel.resetAddToCartState()
             }
@@ -186,7 +199,7 @@ fun DetailScreen(
         }
     }
 
-    // [BARU] Render Custom Dialog jika state true
+    // Render Custom Dialog Add to Cart jika state true
     if (showAddToCartSuccessDialog) {
         AddToCartSuccessDialog(
             onDismiss = { showAddToCartSuccessDialog = false },
@@ -301,6 +314,7 @@ fun DetailScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Gambar Produk
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -316,6 +330,7 @@ fun DetailScreen(
                         )
                     }
 
+                    // Detail Teks
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -330,24 +345,48 @@ fun DetailScreen(
                             )
                         )
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = saka.name,
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.Black
-                                ),
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
+                        // [MODIFIKASI] Layout Nama Produk & Tombol Follow
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = saka.name,
+                                        style = MaterialTheme.typography.headlineSmall.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.Black
+                                        )
+                                    )
+                                    if (saka.isSellerVerified) {
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(
+                                            imageVector = Icons.Filled.CheckCircle,
+                                            contentDescription = "Verified Seller",
+                                            tint = Color(0xFF07C91F),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
 
-                            if (saka.isSellerVerified) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    imageVector = Icons.Filled.CheckCircle,
-                                    contentDescription = "Verified Seller",
-                                    tint = Color(0xFF07C91F),
-                                    modifier = Modifier.size(24.dp)
-                                )
+                            // Tombol Follow (Hanya muncul jika bukan barang sendiri)
+                            if (saka.sellerId != currentUserId) {
+                                Button(
+                                    onClick = { saka.sellerId?.let { viewModel.toggleFollow(it) } },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isFollowing) Color.Gray else BurntOrangeish
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                    modifier = Modifier.height(32.dp),
+                                    shape = RoundedCornerShape(50) // Bentuk kapsul
+                                ) {
+                                    Text(
+                                        text = if (isFollowing) "Diikuti" else "+ Ikuti",
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
                         }
 
@@ -375,6 +414,7 @@ fun DetailScreen(
 
                     HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 24.dp))
 
+                    // Bagian Ulasan
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -413,6 +453,7 @@ fun DetailScreen(
 
                     HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp)
 
+                    // Produk Serupa
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -524,7 +565,6 @@ fun AddToCartSuccessDialog(
     }
 }
 
-// ... (Sisa kode ReviewItemCard, StarRatingDisplay, StarRatingInput, AddReviewDialog tetap sama) ...
 @Composable
 fun ReviewItemCard(review: ReviewItem) {
     Row(modifier = Modifier.fillMaxWidth()) {

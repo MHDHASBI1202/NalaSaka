@@ -244,43 +244,78 @@ fun ProfileHeader(profile: ProfileData) {
             .background(MaterialTheme.colorScheme.secondary)
             .padding(24.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Card(
-                shape = CircleShape,
-                colors = CardDefaults.cardColors(containerColor = Color.LightGray),
-                modifier = Modifier.size(80.dp)
-            ) {
-                AsyncImage(
-                    model = profile.photoUrl,
-                    contentDescription = profile.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().clip(CircleShape),
-                    error = rememberVectorPainter(Icons.Default.Person),
-                    placeholder = rememberVectorPainter(Icons.Default.Person),
-                    fallback = rememberVectorPainter(Icons.Default.Person)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // [PERBAIKAN] Tampilkan Nama + Centang HIJAU di Header Profil
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = profile.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                if (profile.verificationStatus == "verified") {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = "Verified User",
-                        tint = Color(0xFF07C91F), // HIJAU
-                        modifier = Modifier.size(24.dp)
+                Card(
+                    shape = CircleShape,
+                    colors = CardDefaults.cardColors(containerColor = Color.LightGray),
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    AsyncImage(
+                        model = profile.photoUrl,
+                        contentDescription = profile.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(CircleShape)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = profile.name,
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (profile.verificationStatus == "verified") {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = "Verified User",
+                                tint = Color(0xFF07C91F),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        text = profile.email,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f)
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // [BARU] Statistik Follow
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                FollowStatItem("Pengikut", profile.followersCount.toString())
+                // Garis pemisah vertikal kecil
+                Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color.White.copy(alpha = 0.3f)))
+                FollowStatItem("Mengikuti", profile.followingCount.toString())
+            }
         }
+    }
+}
+
+@Composable
+fun FollowStatItem(label: String, count: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = count,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.8f)
+        )
     }
 }
 

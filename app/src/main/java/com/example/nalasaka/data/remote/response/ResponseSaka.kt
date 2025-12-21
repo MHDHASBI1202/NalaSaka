@@ -171,9 +171,25 @@ data class ProfileData(
     @field:SerializedName("storeName")
     val storeName: String? = null,
 
-    // [NEW] Tambahkan ini
+    @field:SerializedName("followersCount")
+    val followersCount: Int = 0,
+
+    @field:SerializedName("followingCount")
+    val followingCount: Int = 0,
+
     @field:SerializedName("verificationStatus")
     val verificationStatus: String = "none"
+)
+
+data class FollowResponse(
+    @field:SerializedName("error")
+    val error: Boolean,
+
+    @field:SerializedName("message")
+    val message: String? = null,
+
+    @field:SerializedName("isFollowing")
+    val isFollowing: Boolean
 )
 
 // Response untuk Mendapatkan Detail Profil Pengguna

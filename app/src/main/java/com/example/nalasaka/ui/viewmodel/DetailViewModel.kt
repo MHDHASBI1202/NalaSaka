@@ -174,4 +174,43 @@ class DetailViewModel(private val repository: UserRepository) : ViewModel() {
             }
         }
     }
+
+    private val _isFollowing = MutableStateFlow(false)
+    val isFollowing: StateFlow<Boolean> = _isFollowing.asStateFlow()
+
+    // Cek apakah user sudah follow seller dari produk ini
+    fun checkFollowStatus(sellerId: String) {
+        viewModelScope.launch {
+            try {
+                val user = repository.getUser().first()
+                if (user.isLogin && sellerId != user.userId) { // Gak bisa follow diri sendiri
+                    val response = repository.checkFollowStatus(user.token, sellerId)
+                    _isFollowing.value = response.isFollowing
+                }
+            } catch (e: Exception) { /* Silent fail */ }
+        }
+    }
+
+    // Aksi Klik Tombol Follow
+    fun toggleFollow(sellerId: String) {
+        viewModelScope.launch {
+            try {
+                val user = repository.getUser().first()
+                if (user.isLogin) {
+                    // Optimistic Update UI
+                    _isFollowing.value = !_isFollowing.value
+
+                    val response = repository.toggleFollow(user.token, sellerId)
+
+                    // Sinkronisasi dengan respon server
+                    if (!response.error) {
+                        _isFollowing.value = response.isFollowing
+                    }
+                }
+            } catch (e: Exception) {
+                // Revert jika gagal
+                _isFollowing.value = !_isFollowing.value
+            }
+        }
+    }
 }

@@ -146,6 +146,12 @@ class UserRepository private constructor(
     suspend fun changePassword(token: String, currentPass: String, newPass: String, newPassConfirm: String) =
         apiService.changePassword("Bearer $token", currentPass, newPass, newPassConfirm)
 
+    suspend fun toggleFollow(token: String, targetId: String) =
+        apiService.toggleFollow("Bearer $token", targetId)
+
+    suspend fun checkFollowStatus(token: String, targetId: String) =
+        apiService.checkFollowStatus("Bearer $token", targetId)
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

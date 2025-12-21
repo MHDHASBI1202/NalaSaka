@@ -4,6 +4,7 @@ import com.example.nalasaka.data.remote.response.AllSakaResponse
 import com.example.nalasaka.data.remote.response.CartResponse
 import com.example.nalasaka.data.remote.response.CheckoutResponse
 import com.example.nalasaka.data.remote.response.DetailSakaResponse
+import com.example.nalasaka.data.remote.response.FollowResponse
 import com.example.nalasaka.data.remote.response.ProfileResponse
 import com.example.nalasaka.data.remote.response.ResponseSaka
 import com.example.nalasaka.data.remote.response.ReviewApiResponse
@@ -229,4 +230,17 @@ interface ApiService {
         @Field("new_password") newPass: String,
         @Field("new_password_confirmation") newPassConfirm: String
     ): ResponseSaka
+
+    @FormUrlEncoded
+    @POST("user/follow")
+    suspend fun toggleFollow(
+        @Header("Authorization") token: String,
+        @Field("target_user_id") targetId: String
+    ): FollowResponse
+
+    @GET("user/follow/check/{targetId}")
+    suspend fun checkFollowStatus(
+        @Header("Authorization") token: String,
+        @Path("targetId") targetId: String
+    ): FollowResponse
 }
