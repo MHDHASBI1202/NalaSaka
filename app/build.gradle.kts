@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -62,6 +63,8 @@ dependencies {
     implementation(libs.paging.compose)
     implementation(libs.androidx.compose.ui.text)
     implementation(libs.androidx.compose.foundation)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging.ktx)
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation(libs.androidx.material3)

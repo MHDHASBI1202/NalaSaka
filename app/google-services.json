@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "662646689644",
+    "project_id": "nalasaka-615cf",
+    "storage_bucket": "nalasaka-615cf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:662646689644:android:5798fe29f585ca9e2a6d49",
+        "android_client_info": {
+          "package_name": "com.example.nalasaka"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxZGNsgw8m17H7J-kMou0FEGWaPnyRbKY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

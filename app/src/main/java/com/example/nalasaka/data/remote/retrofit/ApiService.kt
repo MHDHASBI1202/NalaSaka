@@ -243,4 +243,11 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("targetId") targetId: String
     ): FollowResponse
+
+    @FormUrlEncoded
+    @POST("user/fcm-token")
+    suspend fun updateFcmToken(
+        @Header("Authorization") token: String,
+        @Field("fcm_token") fcmToken: String
+    ): ResponseSaka
 }

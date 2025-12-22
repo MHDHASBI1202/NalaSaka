@@ -152,6 +152,9 @@ class UserRepository private constructor(
     suspend fun checkFollowStatus(token: String, targetId: String) =
         apiService.checkFollowStatus("Bearer $token", targetId)
 
+    suspend fun updateFcmToken(token: String, fcmToken: String) =
+        apiService.updateFcmToken("Bearer $token", fcmToken)
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null
