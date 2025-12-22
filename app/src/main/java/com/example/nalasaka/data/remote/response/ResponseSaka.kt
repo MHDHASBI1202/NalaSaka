@@ -179,6 +179,9 @@ data class ProfileData(
     @field:SerializedName("storeName")
     val storeName: String? = null,
 
+    @field:SerializedName("store_address")
+    val storeAddress: String? = null,
+
     @field:SerializedName("followersCount")
     val followersCount: Int = 0,
 
@@ -343,5 +346,25 @@ data class CartItem(
     @field:SerializedName("photo_url") val photoUrl: String,
     @field:SerializedName("quantity") val quantity: Int,
     @field:SerializedName("stock_available") val stockAvailable: Int,
-    @field:SerializedName("store_name") val storeName: String? = null
+    @field:SerializedName("store_name") val storeName: String? = null,
+    @field:SerializedName("storeAddress") val storeAddress: String? = null,
+    @field:SerializedName("latitude") val latitude: Double? = null,
+    @field:SerializedName("longitude") val longitude: Double? = null
+
+)
+
+data class OrderItem(
+    @field:SerializedName("id") val id: Int,
+    @field:SerializedName("productName") val productName: String,
+    @field:SerializedName("quantity") val quantity: Int,
+    @field:SerializedName("status") val status: String,
+    @field:SerializedName("resiNumber") val resiNumber: String? = null,
+    @field:SerializedName("currentLocation") val currentLocation: String? = null,
+    @field:SerializedName("totalPrice") val totalPrice: Int
+)
+
+// Response untuk Update Lokasi Toko
+data class ResponseStore(
+    @field:SerializedName("error") val error: Boolean,
+    @field:SerializedName("message") val message: String
 )

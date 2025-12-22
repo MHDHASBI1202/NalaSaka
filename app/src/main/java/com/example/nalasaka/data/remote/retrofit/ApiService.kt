@@ -11,6 +11,8 @@ import com.example.nalasaka.data.remote.response.ReviewApiResponse
 import com.example.nalasaka.data.remote.response.SellerStatsResponse
 import com.example.nalasaka.data.remote.response.TransactionHistoryResponse
 import com.example.nalasaka.data.remote.response.WishlistResponse
+import com.example.nalasaka.data.remote.response.OrderItem
+import com.example.nalasaka.data.remote.response.ResponseStore
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
@@ -238,6 +240,29 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Field("target_user_id") targetId: String
     ): FollowResponse
+
+    @FormUrlEncoded
+    @POST("store/location")
+    suspend fun updateStoreLocation(
+        @Header("Authorization") token: String, // Tambahkan token
+        @Field("address") address: String,
+        @Field("latitude") latitude: Double,
+        @Field("longitude") longitude: Double
+    ): ResponseStore
+
+    @GET("seller/orders")
+    suspend fun getSellerOrders(
+        @Header("Authorization") token: String // Tambahkan token
+    ): List<OrderItem>
+
+    // TAMBAHKAN: Fungsi untuk update status pesanan (Sesuai routes/api.php Laravel)
+    @FormUrlEncoded
+    @PATCH("transactions/{id}/status")
+    suspend fun updateOrderStatus(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Field("status") status: String
+    ): ResponseSaka
 
     @GET("user/follow/check/{targetId}")
     suspend fun checkFollowStatus(
