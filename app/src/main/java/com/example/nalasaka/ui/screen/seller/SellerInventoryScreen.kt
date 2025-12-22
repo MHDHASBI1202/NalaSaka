@@ -49,12 +49,10 @@ fun SellerInventoryScreen(
 
     LaunchedEffect(Unit) { viewModel.loadMyProducts() }
 
-    // Handle Action State (Success/Error)
     LaunchedEffect(actionState) {
         if (actionState is UiState.Success) viewModel.resetActionState()
     }
 
-    // --- DIALOG EDIT STOK ---
     if (showEditDialog && selectedSaka != null) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
@@ -80,7 +78,6 @@ fun SellerInventoryScreen(
         )
     }
 
-    // --- DIALOG HAPUS ---
     if (showDeleteDialog && selectedSaka != null) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },

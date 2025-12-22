@@ -36,6 +36,7 @@ import androidx.navigation.NavHostController
 import com.example.nalasaka.ui.components.PrimaryButton
 import com.google.android.gms.location.LocationServices
 import android.Manifest
+import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -67,6 +68,7 @@ import com.example.nalasaka.ui.viewmodel.CartViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import android.location.Geocoder
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.AddCircleOutline
@@ -94,7 +96,11 @@ fun CheckoutScreen(
     val cartState by cartViewModel.cartState.collectAsState()
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    // --- State Alamat ---
+    val groupedItems = remember(cartState) {
+        if (cartState is UiState.Success) {
+            (cartState as UiState.Success).data.groupBy { it.storeName ?: "Toko Tidak Dikenal" }
+        } else emptyMap()
+    }
     var savedAddress by remember { mutableStateOf("") } // Alamat Utama (Dari GPS/Manual Pop-up)
     var tempAddress by remember { mutableStateOf("") }  // Alamat Sementara (Manual di Layar)
     var showAddressDialog by remember { mutableStateOf(false) }
@@ -122,7 +128,6 @@ fun CheckoutScreen(
             title = { Text("Tentukan Alamat Utama") },
             text = {
                 Column {
-                    // Opsi A: GPS
                     Button(
                         onClick = {
                             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -144,12 +149,9 @@ fun CheckoutScreen(
                         Spacer(Modifier.width(8.dp))
                         Text("Gunakan GPS")
                     }
-
                     Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    // Opsi B: Manual (Untuk Alamat Utama)
                     Text("Ketik Manual Alamat Utama:", style = MaterialTheme.typography.labelSmall)
                     OutlinedTextField(
                         value = savedAddress,
@@ -172,9 +174,7 @@ fun CheckoutScreen(
                     ) { Text("Validasi") }
                 }
             },
-            confirmButton = {
-                Button(onClick = { showAddressDialog = false }) { Text("Simpan") }
-            }
+            confirmButton = { Button(onClick = { showAddressDialog = false }) { Text("Simpan") } }
         )
     }
 
@@ -192,7 +192,6 @@ fun CheckoutScreen(
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp).verticalScroll(rememberScrollState())) {
 
-            // Tab Pilih Diantar / Ambil
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 SegmentedButton(selected = shippingType == "Diantar", onClick = { shippingType = "Diantar" }, shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)) { Text("Diantar") }
                 SegmentedButton(selected = shippingType == "Ambil ke Toko", onClick = { shippingType = "Ambil ke Toko" }, shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)) { Text("Ambil ke Toko") }
@@ -200,8 +199,8 @@ fun CheckoutScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // ALAMAT PENGIRIMAN (Hanya muncul jika Diantar)
             if (shippingType == "Diantar") {
-                // --- BAGIAN ALAMAT ---
                 Text("Alamat Pengiriman", fontWeight = FontWeight.Bold)
                 Card(
                     onClick = { showAddressDialog = true },
@@ -215,66 +214,81 @@ fun CheckoutScreen(
                         Text(if(savedAddress.isEmpty()) "Tambah Alamat Pengiriman (Wajib)" else savedAddress, fontSize = 13.sp, modifier = Modifier.weight(1f))
                     }
                 }
-
-                // Logika: Alamat Sementara muncul hanya jika Alamat Utama sudah ada
-                if (savedAddress.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text("Kirim ke Alamat Lain? (Opsional)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-
-                    if (!isEditingTempAddress && tempAddress.isEmpty()) {
-                        OutlinedButton(onClick = { isEditingTempAddress = true }, modifier = Modifier.fillMaxWidth()) {
-                            Icon(Icons.Default.AddCircleOutline, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Tambah Alamat Sementara")
-                        }
-                    } else {
-                        OutlinedTextField(
-                            value = tempAddress,
-                            onValueChange = { tempAddress = it },
-                            label = { Text("Alamat Sementara") },
-                            modifier = Modifier.fillMaxWidth(),
-                            trailingIcon = {
-                                IconButton(onClick = {
-                                    val geocoder = Geocoder(context, Locale.getDefault())
-                                    val results = geocoder.getFromLocationName(tempAddress, 1)
-                                    if (!results.isNullOrEmpty()) {
-                                        tempAddress = results[0].getAddressLine(0)
-                                        Toast.makeText(context, "Alamat Sementara Valid!", Toast.LENGTH_SHORT).show()
-                                    }
-                                }) { Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF2E7D32)) }
-                            }
-                        )
-                        Button(onClick = { tempAddress = ""; isEditingTempAddress = false }) {
-                            Text("Batal", color = Color.Red)
-                        }
-                    }
-                }
             }
 
-            // --- DETAIL PESANAN VISUAL (DIBAWAH ALAMAT) ---
+            // --- BAGIAN DETAIL PESANAN PER TOKO (INI PERUBAHAN UTAMANYA) ---
             Spacer(modifier = Modifier.height(24.dp))
             Text("Detail Pesanan", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
 
-            if (cartState is UiState.Success) {
-                (cartState as UiState.Success).data.forEach { item ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-                    ) {
-                        Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            // Gambar Produk
-                            AsyncImage(
-                                model = item.photoUrl,
-                                contentDescription = null,
-                                modifier = Modifier.size(70.dp).clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(item.name, fontWeight = FontWeight.Medium, maxLines = 1)
-                                Row {
-                                    Text(formatRupiah(item.price), color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                                    Text(" x ${item.quantity}", fontWeight = FontWeight.Bold)
+            groupedItems.forEach { (storeName, items) ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(2.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Storefront, null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(8.dp))
+                            Text(storeName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                        HorizontalDivider(Modifier.padding(vertical = 12.dp))
+
+                        // Barang-barang di Toko ini
+                        items.forEach { item ->
+                            Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                AsyncImage(
+                                    model = item.photoUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text(item.name, fontWeight = FontWeight.Medium, maxLines = 1)
+                                    Text("${formatRupiah(item.price)} x ${item.quantity}", color = Color.Gray, fontSize = 14.sp)
+                                }
+                            }
+                        }
+
+                        // TAMPILAN MAPS (Hanya muncul jika Ambil ke Toko)
+                        if (shippingType == "Ambil ke Toko") {
+                            val storeLat = items.first().latitude
+                            val storeLng = items.first().longitude
+                            val storeName = items.first().storeName ?: "Toko"
+                            val fullAddress = items.first().storeAddress?: "Alamat tidak tersedia"
+
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Card(
+                                onClick = {
+                                    if (storeLat != null && storeLng != null) {
+                                        val gmmIntentUri = Uri.parse("geo:$storeLat,$storeLng?q=$storeLat,$storeLng($storeName)")
+                                        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                                        mapIntent.setPackage("com.google.android.apps.maps")
+                                        context.startActivity(mapIntent)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary)
+                                    Spacer(Modifier.width(8.dp))
+                                    Column {
+                                        Text("Lihat Lokasi di Google Maps", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text(
+                                            text = items.first().storeAddress ?: "Alamat tidak tersedia",
+                                            fontSize = 12.sp
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -282,9 +296,9 @@ fun CheckoutScreen(
                 }
             }
 
-            // --- KURIR & PEMBAYARAN ---
+            // --- KURIR & PEMBAYARAN (Hanya muncul jika Diantar) ---
             if (shippingType == "Diantar") {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
                 Text("Metode Pengiriman", fontWeight = FontWeight.Bold)
                 ExposedDropdownMenuBox(expanded = expandedCourier, onExpandedChange = { expandedCourier = !expandedCourier }) {
                     OutlinedTextField(
@@ -302,23 +316,23 @@ fun CheckoutScreen(
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Metode Pembayaran", fontWeight = FontWeight.Bold)
-            ExposedDropdownMenuBox(expanded = expandedPayment, onExpandedChange = { expandedPayment = !expandedPayment }) {
-                OutlinedTextField(
-                    value = selectedPayment,
-                    onValueChange = {}, readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPayment) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
-                )
-                ExposedDropdownMenu(expanded = expandedPayment, onDismissRequest = { expandedPayment = false }) {
-                    paymentMethods.forEach { method ->
-                        DropdownMenuItem(
-                            text = { Text(method) },
-                            onClick = { selectedPayment = method; expandedPayment = false }
-                        )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Metode Pembayaran", fontWeight = FontWeight.Bold)
+                ExposedDropdownMenuBox(expanded = expandedPayment, onExpandedChange = { expandedPayment = !expandedPayment }) {
+                    OutlinedTextField(
+                        value = selectedPayment,
+                        onValueChange = {}, readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPayment) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = expandedPayment, onDismissRequest = { expandedPayment = false }) {
+                        paymentMethods.forEach { method ->
+                            DropdownMenuItem(
+                                text = { Text(method) },
+                                onClick = { selectedPayment = method; expandedPayment = false }
+                            )
+                        }
                     }
                 }
             }
@@ -326,24 +340,31 @@ fun CheckoutScreen(
             // --- RINGKASAN PEMBAYARAN ---
             Spacer(modifier = Modifier.height(24.dp))
             val ongkir = if(shippingType == "Diantar") selectedCourier.second else 0
+            val biayaJasa = if(shippingType == "Diantar") 1000 else 0
+
             CostRow("Total Harga", formatRupiah(subtotal))
-            if(shippingType == "Diantar") CostRow("Total Ongkos Kirim", formatRupiah(ongkir))
-            CostRow("Biaya Jasa Aplikasi", formatRupiah(1000))
+            if(shippingType == "Diantar") {
+                CostRow("Total Ongkos Kirim", formatRupiah(ongkir))
+                CostRow("Biaya Jasa Aplikasi", formatRupiah(biayaJasa))
+            }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Total Tagihan", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text(formatRupiah(subtotal + ongkir + 1000), color = Color(0xFFE67E22), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(formatRupiah(subtotal + ongkir + biayaJasa), color = Color(0xFFE67E22), fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            PrimaryButton(text = "KONFIRMASI PESANAN", onClick = {
-                val finalAddr = if(tempAddress.isNotEmpty()) tempAddress else savedAddress
-                if(finalAddr.isEmpty() && shippingType == "Diantar") {
-                    Toast.makeText(context, "Alamat belum diisi!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Pesanan dikirim ke: $finalAddr", Toast.LENGTH_LONG).show()
+            PrimaryButton(
+                text = if(shippingType == "Diantar") "KONFIRMASI PESANAN" else "AMBIL KE TOKO",
+                onClick = {
+                    val finalAddr = if(shippingType == "Diantar") savedAddress else "Ambil di Toko"
+                    if(finalAddr.isEmpty() && shippingType == "Diantar") {
+                        Toast.makeText(context, "Alamat belum diisi!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Pesanan diproses!", Toast.LENGTH_LONG).show()
+                    }
                 }
-            })
+            )
         }
     }
 }

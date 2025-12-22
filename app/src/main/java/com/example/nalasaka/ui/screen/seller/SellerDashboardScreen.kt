@@ -1,8 +1,14 @@
 package com.example.nalasaka.ui.screen.seller
 
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.net.Uri
-import android.widget.Toast
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.material.icons.filled.AddLocation
+import java.util.Locale
+import com.example.nalasaka.data.remote.response.OrderItem
+import com.example.nalasaka.data.remote.response.ResponseStore
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -15,7 +21,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.Leaderboard
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -43,7 +60,8 @@ import com.example.nalasaka.ui.viewmodel.ProfileViewModel
 import com.example.nalasaka.ui.viewmodel.SellerViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
-import androidx.core.net.toUri
+import com.google.android.gms.location.LocationServices
+import android.Manifest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,52 +71,137 @@ fun SellerDashboardScreen(
     authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context)),
     profileViewModel: ProfileViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
-    val userModel by authViewModel.userSession.collectAsState(initial = UserModel("", "", "", false))
-    val profileState by profileViewModel.profileState.collectAsState()
     val statsState by sellerViewModel.statsState.collectAsState()
-
-    // NEW: Collect state broadcast
-    val broadcastState by sellerViewModel.broadcastState.collectAsState()
-
+    var showStoreDialog by remember { mutableStateOf(false) }
+    var storeAddress by remember { mutableStateOf("") }
+    var storeLat by remember { mutableDoubleStateOf(0.0) }
+    var storeLng by remember { mutableDoubleStateOf(0.0) }
+    val userSession by authViewModel.userSession.collectAsState(initial = UserModel("", "", "", false))
     val context = LocalContext.current
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val profileState by profileViewModel.profileState.collectAsState()
+
+
+    val actionState by sellerViewModel.actionState.collectAsState()
 
     LaunchedEffect(Unit) {
         sellerViewModel.loadDashboardData()
         profileViewModel.loadUserProfile()
     }
 
-    // NEW: Handle feedback broadcast (Toast)
-    LaunchedEffect(broadcastState) {
-        when (val state = broadcastState) {
-            is UiState.Success -> {
-                Toast.makeText(context, state.data, Toast.LENGTH_LONG).show()
-                sellerViewModel.resetBroadcastState()
-            }
-            is UiState.Error -> {
-                Toast.makeText(context, state.errorMessage, Toast.LENGTH_LONG).show()
-                sellerViewModel.resetBroadcastState()
-            }
-            else -> {}
+    LaunchedEffect(actionState) {
+        if (actionState is UiState.Success) {
+            sellerViewModel.loadDashboardData()
+            profileViewModel.loadUserProfile()
+            sellerViewModel.resetActionState()
         }
+    }
+
+    if (showStoreDialog) {
+        AlertDialog(
+            onDismissRequest = { showStoreDialog = false },
+            title = { Text("Tentukan Lokasi Toko") },
+            text = {
+                Column {
+                    Button(
+                        onClick = {
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                                fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                                    loc?.let {
+                                        val geocoder = Geocoder(context, Locale.getDefault())
+                                        val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+                                        if (!addresses.isNullOrEmpty()) {
+                                            storeAddress = addresses[0].getAddressLine(0)
+                                            storeLat = it.latitude
+                                            storeLng = it.longitude
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.MyLocation, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Gunakan GPS")
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Ketik Manual Alamat Toko:", style = MaterialTheme.typography.labelSmall)
+                    OutlinedTextField(
+                        value = storeAddress,
+                        onValueChange = { storeAddress = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Contoh: Jl. Sudirman No. 1...") },
+                        trailingIcon = {
+                            if (storeAddress.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    val geocoder = Geocoder(context, Locale.getDefault())
+                                    try {
+                                        val results = geocoder.getFromLocationName(storeAddress, 1)
+                                        if (!results.isNullOrEmpty()) {
+                                            val foundAddress = results[0]
+                                            storeAddress = foundAddress.getAddressLine(0)
+                                            storeLat = foundAddress.latitude
+                                            storeLng = foundAddress.longitude
+                                            android.widget.Toast.makeText(context, "Alamat Tervalidasi!", android.widget.Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            android.widget.Toast.makeText(context, "Alamat tidak ditemukan", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                    } catch (e: Exception) {
+                                        android.widget.Toast.makeText(context, "Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = "Validasi", tint = Color(0xFF2E7D32))
+                                }
+                            }
+                        }
+                    )
+                    Text(
+                        text = "Klik ikon hijau untuk validasi alamat",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (storeAddress.isNotEmpty() && storeLat != 0.0) {
+                            sellerViewModel.updateStoreLocation(storeAddress, storeLat, storeLng)
+                            showStoreDialog = false
+                        } else {
+                            android.widget.Toast.makeText(context, "Mohon validasi alamat terlebih dahulu", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) { Text("Simpan Lokasi") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStoreDialog = false }) { Text("Batal") }
+            }
+        )
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard Toko", color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text("Dashboard Toko", color = Color.White) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
                 actions = {
                     IconButton(onClick = {
-                        if (userModel.token.isNotEmpty()) {
-                            // URL Endpoint Laravel disesuaikan dengan koneksi
-                            val reportUrl = "http://10.0.2.2/nalasaka-api/public/api/seller/report/download?token=${userModel.token}"
+                        if (userSession.token.isNotEmpty()) {
+                            val reportUrl = "http://10.0.2.2/nalasaka-api/public/api/seller/report/download?token=${userSession.token}"
+
                             val intent = Intent(Intent.ACTION_VIEW).apply {
-                                data = reportUrl.toUri()
+                                data = Uri.parse(reportUrl)
                             }
                             try {
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Browser tidak ditemukan", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }) {
@@ -110,17 +213,11 @@ fun SellerDashboardScreen(
                     }
                 }
             )
-        },
-        containerColor = Color(0xFFF5F5F5)
+        }
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+            modifier = Modifier.fillMaxSize().padding(paddingValues).verticalScroll(rememberScrollState()).padding(16.dp)
         ) {
-            // --- HEADER TOKO ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = DeepMoss),
@@ -132,45 +229,63 @@ fun SellerDashboardScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Store,
-                        contentDescription = "Store Icon",
+                        contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(40.dp)
                     )
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(text = "Halo, Seller!", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = userModel.name,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            val isVerified = (profileState as? UiState.Success)?.data?.verificationStatus == "verified"
-                            if (isVerified) {
-                                Spacer(modifier = Modifier.width(8.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Halo, Seller!", color = Color.White.copy(alpha = 0.8f))
+                        Text(
+                            text = userSession.name,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+
+                        val profileData = (profileState as? UiState.Success)?.data
+                        val alamatToko = profileData?.storeAddress
+                        if (!alamatToko.isNullOrEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = "Verified Seller",
-                                    tint = Color(0xFF07C91F),
-                                    modifier = Modifier.size(24.dp)
+                                    imageVector = Icons.Default.AddLocation,
+                                    contentDescription = null,
+                                    tint = Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = alamatToko,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    maxLines = 1
                                 )
                             }
+                        } else {
+                            Text(
+                                text = "Lokasi toko belum diatur",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.5f)
+                            )
                         }
+                    }
+
+                    IconButton(
+                        onClick = { showStoreDialog = true },
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                    ) {
+                        Icon(Icons.Default.AddLocation, "Edit Lokasi", tint = Color.White)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- MENU KELOLA ---
-            Text(
-                text = "Menu Kelola",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
+            Text(text = "Menu Kelola", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 SellerMenuCard(
                     title = "Upload Barang",
@@ -178,34 +293,16 @@ fun SellerDashboardScreen(
                     modifier = Modifier.weight(1f),
                     onClick = { navController.navigate(Screen.AddSaka.route) }
                 )
-
-                // [UPDATE] Tombol Siarkan Promo
                 SellerMenuCard(
-                    title = if (broadcastState is UiState.Loading) "Mengirim..." else "Siarkan Promo",
-                    icon = Icons.Default.Campaign,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        if (broadcastState !is UiState.Loading) {
-                            sellerViewModel.broadcastPromo()
-                        }
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                SellerMenuCard(
-                    title = "Stok Produk",
+                    title = "Pesanan Masuk",
                     icon = Icons.Default.Inventory,
-                    modifier = Modifier.fillMaxWidth(0.5f),
-                    onClick = { navController.navigate(Screen.SellerInventory.route) }
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate("seller_orders_list") }
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- STATISTIK RINGKASAN ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -234,7 +331,6 @@ fun SellerDashboardScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- GRAFIK PENJUALAN HARIAN ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -258,17 +354,20 @@ fun SellerDashboardScreen(
                                 CircularProgressIndicator()
                             }
                         }
-                        else -> {}
+                        else -> {
+                        }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- PERFORMA PRODUK (DROPDOWN) ---
             when (val state = statsState) {
                 is UiState.Success -> {
                     ProductPerformanceCard(products = state.data.productPerformance)
+                }
+                is UiState.Loading -> {
+
                 }
                 else -> {}
             }
@@ -291,6 +390,7 @@ fun ProductPerformanceCard(products: List<ProductSalesStat>) {
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -307,7 +407,7 @@ fun ProductPerformanceCard(products: List<ProductSalesStat>) {
                 }
                 Icon(
                     imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = null,
+                    contentDescription = if (expanded) "Tutup" else "Buka",
                     tint = Color.Gray
                 )
             }

@@ -91,11 +91,11 @@ class UserRepository private constructor(
     }
 
     suspend fun getMyProducts(token: String): AllSakaResponse {
-        return apiService.getMyProducts("Bearer $token")
+        return apiService.getMyProducts(token)
     }
 
     suspend fun getSellerStats(token: String): SellerStatsResponse {
-        return apiService.getSellerStats("Bearer $token")
+        return apiService.getSellerStats(token)
     }
 
     // --- MODUL REPUTASI & ANALISIS (NEW) ---
@@ -159,6 +159,19 @@ class UserRepository private constructor(
     suspend fun broadcastPromo(token: String): ResponseSaka {
         return apiService.broadcastPromo("Bearer $token")
     }
+
+    suspend fun getSellerOrders(token: String): List<OrderItem> {
+        return apiService.getSellerOrders(token)
+    }
+
+    suspend fun updateOrderStatus(token: String, orderId: Int, status: String): ResponseSaka {
+        return apiService.updateOrderStatus(token, orderId, status)
+    }
+
+    suspend fun updateStoreLocation(token: String, address: String, lat: Double, lng: Double): ResponseStore {
+        return apiService.updateStoreLocation(token, address, lat, lng)
+    }
+
 
     companion object {
         @Volatile
