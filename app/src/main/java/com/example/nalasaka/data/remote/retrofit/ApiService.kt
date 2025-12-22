@@ -250,4 +250,9 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Field("fcm_token") fcmToken: String
     ): ResponseSaka
+
+    @POST("seller/broadcast")
+    suspend fun broadcastPromo(
+        @Header("Authorization") token: String
+    ): ResponseSaka
 }

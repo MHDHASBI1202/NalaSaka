@@ -2,6 +2,7 @@ package com.example.nalasaka.ui.screen.seller
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -14,16 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.Leaderboard
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -51,6 +43,7 @@ import com.example.nalasaka.ui.viewmodel.ProfileViewModel
 import com.example.nalasaka.ui.viewmodel.SellerViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,12 +57,29 @@ fun SellerDashboardScreen(
     val profileState by profileViewModel.profileState.collectAsState()
     val statsState by sellerViewModel.statsState.collectAsState()
 
-    // Context untuk Intent browser
+    // NEW: Collect state broadcast
+    val broadcastState by sellerViewModel.broadcastState.collectAsState()
+
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         sellerViewModel.loadDashboardData()
         profileViewModel.loadUserProfile()
+    }
+
+    // NEW: Handle feedback broadcast (Toast)
+    LaunchedEffect(broadcastState) {
+        when (val state = broadcastState) {
+            is UiState.Success -> {
+                Toast.makeText(context, state.data, Toast.LENGTH_LONG).show()
+                sellerViewModel.resetBroadcastState()
+            }
+            is UiState.Error -> {
+                Toast.makeText(context, state.errorMessage, Toast.LENGTH_LONG).show()
+                sellerViewModel.resetBroadcastState()
+            }
+            else -> {}
+        }
     }
 
     Scaffold(
@@ -78,20 +88,17 @@ fun SellerDashboardScreen(
                 title = { Text("Dashboard Toko", color = MaterialTheme.colorScheme.onPrimary) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
                 actions = {
-                    // [TUGAS YANG MULIA] Tombol Cetak Laporan PDF
                     IconButton(onClick = {
                         if (userModel.token.isNotEmpty()) {
-                            // URL Endpoint Laravel (Pastikan IP sesuai dengan jaringan lokal Anda)
-                            val reportUrl = "http://192.168.1.2/nalasaka-api/public/api/seller/report/download?token=${userModel.token}"
-
+                            // URL Endpoint Laravel disesuaikan dengan koneksi
+                            val reportUrl = "http://10.0.2.2/nalasaka-api/public/api/seller/report/download?token=${userModel.token}"
                             val intent = Intent(Intent.ACTION_VIEW).apply {
-                                data = Uri.parse(reportUrl)
+                                data = reportUrl.toUri()
                             }
-                            // Cek apakah ada browser untuk menangani intent ini (Best Practice)
                             try {
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                // Handle error jika tidak ada browser
+                                Toast.makeText(context, "Browser tidak ditemukan", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }) {
@@ -143,9 +150,9 @@ fun SellerDashboardScreen(
                             if (isVerified) {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Icon(
-                                    imageVector = Icons.Filled.CheckCircle,
+                                    imageVector = Icons.Default.CheckCircle,
                                     contentDescription = "Verified Seller",
-                                    tint = Color(0xFF07C91F), // Hijau
+                                    tint = Color(0xFF07C91F),
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -171,10 +178,27 @@ fun SellerDashboardScreen(
                     modifier = Modifier.weight(1f),
                     onClick = { navController.navigate(Screen.AddSaka.route) }
                 )
+
+                // [UPDATE] Tombol Siarkan Promo
+                SellerMenuCard(
+                    title = if (broadcastState is UiState.Loading) "Mengirim..." else "Siarkan Promo",
+                    icon = Icons.Default.Campaign,
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        if (broadcastState !is UiState.Loading) {
+                            sellerViewModel.broadcastPromo()
+                        }
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
                 SellerMenuCard(
                     title = "Stok Produk",
                     icon = Icons.Default.Inventory,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(0.5f),
                     onClick = { navController.navigate(Screen.SellerInventory.route) }
                 )
             }
@@ -234,9 +258,7 @@ fun SellerDashboardScreen(
                                 CircularProgressIndicator()
                             }
                         }
-                        else -> {
-                            // Kosong atau Error handled gracefully
-                        }
+                        else -> {}
                     }
                 }
             }
@@ -248,9 +270,6 @@ fun SellerDashboardScreen(
                 is UiState.Success -> {
                     ProductPerformanceCard(products = state.data.productPerformance)
                 }
-                is UiState.Loading -> {
-                    // Placeholder
-                }
                 else -> {}
             }
 
@@ -259,7 +278,6 @@ fun SellerDashboardScreen(
     }
 }
 
-// --- KOMPONEN BARU: ProductPerformanceCard (Dropdown/Accordion) ---
 @Composable
 fun ProductPerformanceCard(products: List<ProductSalesStat>) {
     var expanded by remember { mutableStateOf(false) }
@@ -267,13 +285,12 @@ fun ProductPerformanceCard(products: List<ProductSalesStat>) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded }, // Klik Card untuk Expand/Collapse
+            .clickable { expanded = !expanded },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header Dropdown
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -288,15 +305,13 @@ fun ProductPerformanceCard(products: List<ProductSalesStat>) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Performa Barang", fontWeight = FontWeight.Bold)
                 }
-                // Icon Panah yang berubah arah
                 Icon(
                     imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Tutup" else "Buka",
+                    contentDescription = null,
                     tint = Color.Gray
                 )
             }
 
-            // Konten yang bisa disembunyikan
             AnimatedVisibility(
                 visible = expanded,
                 enter = expandVertically() + fadeIn(),
@@ -334,7 +349,6 @@ fun ProductPerformanceItem(product: ProductSalesStat, rank: Int) {
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Ranking (1, 2, 3...)
         Text(
             text = "#$rank",
             style = MaterialTheme.typography.bodyMedium,
@@ -343,7 +357,6 @@ fun ProductPerformanceItem(product: ProductSalesStat, rank: Int) {
             modifier = Modifier.width(30.dp)
         )
 
-        // Foto Kecil
         AsyncImage(
             model = product.imageUrl,
             contentDescription = null,
@@ -356,7 +369,6 @@ fun ProductPerformanceItem(product: ProductSalesStat, rank: Int) {
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Info Produk
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = product.name,
@@ -371,7 +383,6 @@ fun ProductPerformanceItem(product: ProductSalesStat, rank: Int) {
             )
         }
 
-        // Total Pendapatan Produk
         Text(
             text = formatRupiah(product.totalRevenue),
             style = MaterialTheme.typography.bodySmall,
@@ -381,7 +392,6 @@ fun ProductPerformanceItem(product: ProductSalesStat, rank: Int) {
     }
 }
 
-// --- KOMPONEN CHART CUSTOM ---
 @Composable
 fun SimpleBarChart(dailyData: List<DailySalesItem>) {
     if (dailyData.isEmpty()) {

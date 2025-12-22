@@ -155,6 +155,10 @@ class UserRepository private constructor(
     suspend fun updateFcmToken(token: String, fcmToken: String) =
         apiService.updateFcmToken("Bearer $token", fcmToken)
 
+    suspend fun broadcastPromo(token: String): ResponseSaka {
+        return apiService.broadcastPromo("Bearer $token")
+    }
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

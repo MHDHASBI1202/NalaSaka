@@ -3,10 +3,15 @@ package com.example.nalasaka.ui.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.nalasaka.data.pref.UserPreference
+import com.example.nalasaka.data.pref.dataStore
 import com.example.nalasaka.data.repository.UserRepository
 import com.example.nalasaka.di.Injection
 
-class ViewModelFactory(private val repository: UserRepository) : ViewModelProvider.NewInstanceFactory() {
+class ViewModelFactory(
+    private val repository: UserRepository,
+    private val userPreference: UserPreference // Tambahkan parameter ini
+) : ViewModelProvider.NewInstanceFactory() {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -35,16 +40,14 @@ class ViewModelFactory(private val repository: UserRepository) : ViewModelProvid
             modelClass.isAssignableFrom(TransactionViewModel::class.java) -> {
                 TransactionViewModel(repository) as T
             }
-            // 6. Seller ViewModel
+            // 6. Seller ViewModel -> [SEKARANG SUDAH ADA USERPREFERENCE]
             modelClass.isAssignableFrom(SellerViewModel::class.java) -> {
-                SellerViewModel(repository) as T
+                SellerViewModel(repository, userPreference) as T
             }
             // 7. Profile ViewModel
             modelClass.isAssignableFrom(ProfileViewModel::class.java) -> {
                 ProfileViewModel(repository) as T
             }
-
-            // [PENTING: TAMBAHKAN BAGIAN INI]
             // 8. Wishlist ViewModel
             modelClass.isAssignableFrom(WishlistViewModel::class.java) -> {
                 WishlistViewModel(repository) as T
@@ -60,9 +63,13 @@ class ViewModelFactory(private val repository: UserRepository) : ViewModelProvid
 
         @JvmStatic
         fun getInstance(context: Context): ViewModelFactory {
-            // Membuat instance UserRepository hanya sekali
             return INSTANCE ?: synchronized(ViewModelFactory::class.java) {
-                INSTANCE ?: ViewModelFactory(Injection.provideRepository(context)).also { INSTANCE = it }
+                // Ambil instance repository dari Injection
+                val repository = Injection.provideRepository(context)
+                // Ambil instance userPreference dari context datastore
+                val userPreference = UserPreference.getInstance(context.dataStore)
+
+                INSTANCE ?: ViewModelFactory(repository, userPreference).also { INSTANCE = it }
             }
         }
     }
