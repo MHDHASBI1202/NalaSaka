@@ -4,6 +4,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 class ApiConfig {
     companion object {
@@ -12,10 +13,13 @@ class ApiConfig {
             val loggingInterceptor = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
             val client = OkHttpClient.Builder()
                 .addInterceptor(loggingInterceptor)
+                .connectTimeout(30, TimeUnit.SECONDS) // Waktu koneksi
+                .readTimeout(30, TimeUnit.SECONDS)    // Waktu membaca response
+                .writeTimeout(30, TimeUnit.SECONDS)   // Waktu mengirim data
                 .build()
             val retrofit = Retrofit.Builder()
                 // !!! GANTI DENGAN BASE_URL API BACKEND ANDA !!!
-                .baseUrl("http://192.168.56.1/nalasaka-api/public/api/")
+                .baseUrl("http://10.0.2.2/nalasaka-api/public/api/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build()

@@ -53,12 +53,17 @@ data class SakaItem(
     @field:SerializedName("sellerId")
     val sellerId: String? = null,
 
-    // [NEW] Tambahkan field ini (Nanti backend menyusul)
     @field:SerializedName("isSellerVerified")
     val isSellerVerified: Boolean = false,
 
     @field:SerializedName("category")
-    val category: String = "Umum"
+    val category: String = "Umum",
+
+    @field:SerializedName("sellerName")
+    val sellerName: String = "Penjual",
+
+    @field:SerializedName("sellerPhotoUrl")
+    val sellerPhotoUrl: String? = null
 )
 
 // Response untuk Mendapatkan Semua Produk

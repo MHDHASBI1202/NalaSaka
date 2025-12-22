@@ -30,7 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog // Import Dialog
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -121,7 +121,7 @@ fun DetailScreen(
     val submitReviewState by viewModel.submitReviewState.collectAsState()
     val addToCartState by cartViewModel.addToCartState.collectAsState()
 
-    // [BARU] State Follow dari ViewModel
+    // State Follow dari ViewModel
     val isFollowing by viewModel.isFollowing.collectAsState()
 
     // Collect state wishlist
@@ -154,7 +154,7 @@ fun DetailScreen(
         viewModel.loadSakaDetail(sakaId)
     }
 
-    // [BARU] Effect untuk mengecek status Follow saat data produk berhasil dimuat
+    // Effect untuk mengecek status Follow saat data produk berhasil dimuat
     LaunchedEffect(sakaDetailState) {
         if (sakaDetailState is UiState.Success) {
             val sellerId = (sakaDetailState as UiState.Success).data.sellerId
@@ -345,48 +345,24 @@ fun DetailScreen(
                             )
                         )
 
-                        // [MODIFIKASI] Layout Nama Produk & Tombol Follow
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = saka.name,
-                                        style = MaterialTheme.typography.headlineSmall.copy(
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color.Black
-                                        )
-                                    )
-                                    if (saka.isSellerVerified) {
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Icon(
-                                            imageVector = Icons.Filled.CheckCircle,
-                                            contentDescription = "Verified Seller",
-                                            tint = Color(0xFF07C91F),
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Tombol Follow (Hanya muncul jika bukan barang sendiri)
-                            if (saka.sellerId != currentUserId) {
-                                Button(
-                                    onClick = { saka.sellerId?.let { viewModel.toggleFollow(it) } },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (isFollowing) Color.Gray else BurntOrangeish
-                                    ),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                                    modifier = Modifier.height(32.dp),
-                                    shape = RoundedCornerShape(50) // Bentuk kapsul
-                                ) {
-                                    Text(
-                                        text = if (isFollowing) "Diikuti" else "+ Ikuti",
-                                        fontSize = 12.sp
-                                    )
-                                }
+                        // NAMA PRODUK (Tombol Follow DIHAPUS dari sini)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = saka.name,
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.Black
+                                )
+                            )
+                            // Jika ingin badge verified produk tetap di sini, uncomment ini:
+                             if (saka.isSellerVerified) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Filled.CheckCircle,
+                                    contentDescription = "Verified",
+                                    tint = Color(0xFF07C91F),
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
 
@@ -394,7 +370,6 @@ fun DetailScreen(
                             text = "Kategori: ${saka.category}",
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, color = Color.Gray)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             StarRatingDisplay(rating = averageRating)
@@ -403,14 +378,37 @@ fun DetailScreen(
                                 style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black, fontWeight = FontWeight.Medium)
                             )
                         }
+                    }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                    // --- KARTU INFORMASI PENJUAL (BARU) ---
+                    Spacer(modifier = Modifier.height(8.dp))
 
+                    SellerInfoCard(
+                        sellerName = saka.sellerName, // Pastikan field ini ada di ResponseSaka
+                        sellerPhotoUrl = saka.sellerPhotoUrl, // Pastikan field ini ada di ResponseSaka
+                        isVerified = saka.isSellerVerified,
+                        isFollowing = isFollowing,
+                        isSelf = saka.sellerId == currentUserId,
+                        onFollowClick = { saka.sellerId?.let { viewModel.toggleFollow(it) } }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // DESKRIPSI
+                    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                        Text(
+                            text = "Deskripsi Produk",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = saka.description,
                             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp, color = Color.Black)
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 24.dp))
 
@@ -730,4 +728,89 @@ fun AddReviewDialog(
             TextButton(onClick = onDismiss) { Text("Batal") }
         }
     )
+}
+
+// [BARU] Kartu Informasi Penjual
+@Composable
+fun SellerInfoCard(
+    sellerName: String,
+    sellerPhotoUrl: String?,
+    isVerified: Boolean,
+    isFollowing: Boolean,
+    isSelf: Boolean, // Cek apakah ini toko sendiri
+    onFollowClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp), // Sesuaikan padding kiri-kanan
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Foto Profil Penjual
+            AsyncImage(
+                model = sellerPhotoUrl,
+                contentDescription = sellerName,
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Nama & Status
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = sellerName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (isVerified) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = "Verified",
+                            tint = Color(0xFF07C91F),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = "Penjual Terpercaya",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+
+            // Tombol Ikuti (Hanya jika bukan toko sendiri)
+            if (!isSelf) {
+                Button(
+                    onClick = onFollowClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isFollowing) Color.Gray else BurntOrangeish
+                    ),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                    modifier = Modifier.height(36.dp),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text(
+                        text = if (isFollowing) "Diikuti" else "Ikuti",
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        }
+    }
 }
