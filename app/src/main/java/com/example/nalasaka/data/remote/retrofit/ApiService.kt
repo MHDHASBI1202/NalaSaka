@@ -56,6 +56,7 @@ interface ApiService {
         @Part("category") category: RequestBody,
         @Part("description") description: RequestBody,
         @Part("price") price: RequestBody,
+        @Part("discount_price") discountPrice: RequestBody?,
         @Part("stock") stock: RequestBody
     ): ResponseSaka
 

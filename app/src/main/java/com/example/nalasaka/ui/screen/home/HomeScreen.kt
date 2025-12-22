@@ -1,3 +1,5 @@
+// app/src/main/java/com/example/nalasaka/ui/screen/home/HomeScreen.kt
+
 package com.example.nalasaka.ui.screen.home
 
 import androidx.compose.foundation.Image
@@ -22,17 +24,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage // PENTING: Import Coil
+import coil.compose.AsyncImage
 import com.example.nalasaka.R
 import com.example.nalasaka.data.remote.response.SakaItem
 import com.example.nalasaka.ui.components.formatRupiah
 import com.example.nalasaka.ui.navigation.Screen
+import com.example.nalasaka.ui.theme.BurntOrangeish
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
 import com.example.nalasaka.ui.viewmodel.HomeViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
-import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 
 @Composable
 fun HomeScreen(
@@ -45,7 +48,6 @@ fun HomeScreen(
         initial = com.example.nalasaka.data.pref.UserModel("", "", "", false)
     )
 
-    // Load data saat masuk halaman jika sudah login
     LaunchedEffect(userModel.isLogin) {
         if (userModel.isLogin) {
             viewModel.loadSaka(userModel.token)
@@ -54,25 +56,21 @@ fun HomeScreen(
         }
     }
 
-    // Placeholder untuk Search
     var searchText by remember { mutableStateOf("") }
-
-    // Ambil data list dari state
     val listSaka = (sakaState as? UiState.Success<List<SakaItem>>)?.data ?: emptyList()
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp), // Berikan padding bawah agar tidak tertutup BottomBar
+            contentPadding = PaddingValues(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. HEADER (Banner dan Search Bar)
+            // 1. HEADER (Banner Promo & Search Bar)
             item {
                 HomeHeader(
                     searchText = searchText,
                     onSearchTextChange = { searchText = it },
-                    onSearch = { /* TODO: Implementasi Search ke ProductScreen */ },
-                    onRefresh = { viewModel.loadSaka(userModel.token) }
+                    onSearch = { navController.navigate(Screen.Produk.route) }
                 )
             }
 
@@ -87,34 +85,21 @@ fun HomeScreen(
                 }
             }
 
-            // Jika data ada, tampilkan section produk
             if (listSaka.isNotEmpty()) {
                 // 2. Kategori Produk (Promo Terbaik Minggu Ini)
-                // Kita ambil 5 data pertama sebagai contoh
                 item {
                     ProductCategorySection(
                         title = "Promo Terbaik Minggu Ini",
-                        sakaList = listSaka.take(5),
+                        sakaList = listSaka.filter { it.discountPrice != null && it.discountPrice > 0 }.take(5).ifEmpty { listSaka.take(5) },
                         onClickItem = { sakaId -> navController.navigate(Screen.Detail.createRoute(sakaId)) }
                     )
                 }
 
                 // 3. Kategori Produk (Flash Sale)
-                // Kita acak urutannya (shuffled) dan ambil 5 untuk variasi
                 item {
                     ProductCategorySection(
                         title = "Flash Sale",
                         sakaList = listSaka.shuffled().take(5),
-                        onClickItem = { sakaId -> navController.navigate(Screen.Detail.createRoute(sakaId)) }
-                    )
-                }
-
-                // 4. Kategori Produk (Last Chance)
-                // Kita ambil 5 data terakhir
-                item {
-                    ProductCategorySection(
-                        title = "Last Chance",
-                        sakaList = listSaka.takeLast(5),
                         onClickItem = { sakaId -> navController.navigate(Screen.Detail.createRoute(sakaId)) }
                     )
                 }
@@ -128,43 +113,70 @@ fun HomeHeader(
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     onSearch: () -> Unit,
-    onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
+    Column(modifier = modifier.fillMaxWidth()) {
+        // --- BAGIAN BANNER PROMO ---
+        Box(modifier = Modifier
             .fillMaxWidth()
-            .height(250.dp) // Tinggi Banner
-            .background(Color(0xFFE0E0E0)) // Warna background placeholder
-    ) {
-        // Banner Promo (Static Resource)
-        // Catatan: Jika ingin banner dari database, perlu buat API khusus Banner.
-        // Untuk saat ini kita gunakan resource gambar statis aplikasi.
-        Image(
-            painter = painterResource(id = R.drawable.ic_launcher_background),
-            contentDescription = "Promo Banner",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // Overlay untuk Bilah Pencarian
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom // Tempatkan di bawah
+            .height(220.dp)
         ) {
-            // Teks Info di Banner
-            Text("KHUSUS PENGGUNA BARU", color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.align(Alignment.Start))
-            Spacer(modifier = Modifier.height(8.dp))
+            // Background Image Banner
+            Image(
+                painter = painterResource(id = R.drawable.ic_launcher_background), // GANTI DENGAN banner_promo
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
 
-            // Search Bar
+            // Background Overlay (Agar teks lebih terbaca)
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)))
+
+            // Konten Teks Promo
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(24.dp)
+            ) {
+                Surface(
+                    color = Color.Red,
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        "DISKON USER BARU",
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Potongan Rp 20.000\nUntuk Semua Buah!",
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 22.sp,
+                    lineHeight = 28.sp
+                )
+                Button(
+                    onClick = { /* Arahkan ke kategori Buah */ },
+                    colors = ButtonDefaults.buttonColors(containerColor = BurntOrangeish),
+                    modifier = Modifier.padding(top = 12.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Klaim Sekarang", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        // --- BAGIAN SEARCH BAR (Di bawah Banner) ---
+        Box(modifier = Modifier.padding(16.dp)) {
             OutlinedTextField(
                 value = searchText,
                 onValueChange = onSearchTextChange,
-                label = { Text("Cari Kebutuhanmu") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                placeholder = { Text("Cari sayur atau buah segar...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
@@ -173,7 +185,6 @@ fun HomeHeader(
                     unfocusedContainerColor = Color.White,
                 )
             )
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -184,7 +195,7 @@ fun ProductCategorySection(
     sakaList: List<SakaItem>,
     onClickItem: (String) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -193,16 +204,15 @@ fun ProductCategorySection(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+                color = Color.Black
             )
-            TextButton(onClick = { /* TODO: Navigasi Lihat Semua ke ProductScreen */ }) {
-                Text("Lihat Semua", color = MaterialTheme.colorScheme.primary)
+            TextButton(onClick = { /* Lihat Semua */ }) {
+                Text("Lihat Semua", color = BurntOrangeish)
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Gunakan LazyRow untuk daftar horizontal
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -221,64 +231,66 @@ fun SakaCardHorizontal(
 ) {
     Card(
         modifier = modifier
-            .width(140.dp) // Ukuran Card horizontal
-            .height(220.dp)
+            .width(150.dp)
+            .height(230.dp)
             .clickable { onClick(saka.id) },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp)
-        ) {
-            // Gambar Produk (Menggunakan AsyncImage dari Coil)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFE0E0E0)) // Placeholder warna abu-abu saat loading
+        Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(110.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFE0E0E0))
             ) {
-                // [PERBAIKAN UTAMA] Menggunakan AsyncImage untuk memuat URL dari database
                 AsyncImage(
                     model = saka.photoUrl,
                     contentDescription = saka.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
-                    // Gambar fallback jika URL error atau loading gagal
-                    error = painterResource(id = R.drawable.ic_launcher_foreground),
-                    placeholder = painterResource(id = R.drawable.ic_launcher_foreground)
+                    error = painterResource(id = R.drawable.ic_launcher_foreground)
                 )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Nama & Deskripsi
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = saka.name,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = saka.category,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Logika Harga Coret di Card Horizontal
+            if (saka.discountPrice != null && saka.discountPrice > 0) {
                 Text(
-                    text = saka.name,
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.SemiBold
+                    text = formatRupiah(saka.discountPrice),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.Red,
+                    fontWeight = FontWeight.ExtraBold
                 )
-                // Menampilkan Kategori sebagai info tambahan
                 Text(
-                    text = "Kategori: ${saka.category}",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = formatRupiah(saka.price),
+                    style = androidx.compose.ui.text.TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough),
                     color = Color.Gray,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    fontSize = 10.sp
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                // Harga Produk
+            } else {
                 Text(
                     text = formatRupiah(saka.price),
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary, // Burnt Orangeish
-                    fontWeight = FontWeight.Bold
+                    color = BurntOrangeish,
+                    fontWeight = FontWeight.ExtraBold
                 )
             }
         }

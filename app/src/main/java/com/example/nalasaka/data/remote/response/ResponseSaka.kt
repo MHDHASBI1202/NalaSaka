@@ -47,6 +47,9 @@ data class SakaItem(
     @field:SerializedName("price")
     val price: Int,
 
+    @field:SerializedName("discountPrice")
+    val discountPrice: Int? = null,
+
     @field:SerializedName("stock")
     val stock: Int = 0,
 

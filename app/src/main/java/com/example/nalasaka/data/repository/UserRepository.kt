@@ -56,9 +56,10 @@ class UserRepository private constructor(
         category: RequestBody,
         description: RequestBody,
         price: RequestBody,
+        discountPrice: RequestBody?,
         stock: RequestBody
     ): ResponseSaka {
-        return apiService.addNewSaka("Bearer $token", file, name, category, description, price, stock)
+        return apiService.addNewSaka("Bearer $token", file, name, category, description, price, discountPrice, stock)
     }
 
     suspend fun updateStock(token: String, sakaId: String, newStock: Int): ResponseSaka {

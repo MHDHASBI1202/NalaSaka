@@ -9,11 +9,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -25,7 +23,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -55,6 +52,7 @@ fun AddSakaScreen(
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var priceText by remember { mutableStateOf("") }
+    var discountPriceText by remember { mutableStateOf("") } // NEW: State Diskon
     var stockText by remember { mutableStateOf("") }
 
     // State Kategori
@@ -64,21 +62,16 @@ fun AddSakaScreen(
 
     // Errors
     var nameError by remember { mutableStateOf<String?>(null) }
-    var descriptionError by remember { mutableStateOf<String?>(null) }
     var priceError by remember { mutableStateOf<String?>(null) }
-    var stockError by remember { mutableStateOf<String?>(null) }
     var imageError by remember { mutableStateOf<String?>(null) }
 
     // Dialog Gambar
     var showImageSourceDialog by remember { mutableStateOf(false) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
-
-    // State Dialog Sukses Upload
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     val fileProviderAuthority = "${context.packageName}.provider"
 
-    // Launchers
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -108,11 +101,9 @@ fun AddSakaScreen(
         }
     }
 
-    // Effect untuk memantau status upload
     LaunchedEffect(uploadState) {
         when (val state = uploadState) {
             is UiState.Success -> {
-                // Munculkan Dialog Sukses alih-alih langsung popBackStack
                 showSuccessDialog = true
             }
             is UiState.Error -> {
@@ -123,11 +114,9 @@ fun AddSakaScreen(
         }
     }
 
-    // --- DIALOG SUKSES UPLOAD ---
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = {
-                // Jika user klik di luar dialog, tetap tutup dan kembali
                 showSuccessDialog = false
                 viewModel.resetUploadState()
                 navController.popBackStack()
@@ -139,9 +128,8 @@ fun AddSakaScreen(
                     onClick = {
                         showSuccessDialog = false
                         viewModel.resetUploadState()
-                        navController.popBackStack() // Kembali ke dashboard
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        navController.popBackStack()
+                    }
                 ) {
                     Text("OK")
                 }
@@ -149,7 +137,6 @@ fun AddSakaScreen(
         )
     }
 
-    // --- DIALOG PILIHAN GAMBAR ---
     if (showImageSourceDialog) {
         AlertDialog(
             onDismissRequest = { showImageSourceDialog = false },
@@ -158,7 +145,7 @@ fun AddSakaScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showImageSourceDialog = false
-                    imagePickerLauncher.launch("image/*") // Buka Galeri
+                    imagePickerLauncher.launch("image/*")
                 }) {
                     Icon(Icons.Default.Image, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
@@ -168,7 +155,6 @@ fun AddSakaScreen(
             dismissButton = {
                 TextButton(onClick = {
                     showImageSourceDialog = false
-                    // Cek Izin Kamera
                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                         val photoFile = File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
                         val uri = FileProvider.getUriForFile(context, fileProviderAuthority, photoFile)
@@ -209,12 +195,11 @@ fun AddSakaScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Area Foto (Klik untuk buka Dialog)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .clickable { showImageSourceDialog = true }, // Klik memicu Dialog Gambar
+                    .clickable { showImageSourceDialog = true },
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
@@ -229,7 +214,7 @@ fun AddSakaScreen(
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Camera, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Ketuk untuk ambil foto/pilih dari galeri", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Ketuk untuk pilih foto", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -238,7 +223,6 @@ fun AddSakaScreen(
                 Text(text = imageError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
 
-            // Input Nama Produk
             CustomTextField(
                 value = name,
                 onValueChange = { name = it; nameError = null },
@@ -247,7 +231,6 @@ fun AddSakaScreen(
                 errorMessage = nameError
             )
 
-            // Dropdown Kategori
             ExposedDropdownMenuBox(
                 expanded = expandedCategory,
                 onExpandedChange = { expandedCategory = !expandedCategory },
@@ -274,90 +257,73 @@ fun AddSakaScreen(
                 }
             }
 
-            // Row untuk Harga dan Stok bersebelahan
+            // --- HARGA & STOK ---
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 CustomTextField(
                     value = priceText,
                     onValueChange = { priceText = it; priceError = null },
-                    label = "Harga (Rp)",
+                    label = "Harga Normal (Rp)",
                     keyboardType = KeyboardType.Number,
                     isError = priceError != null,
                     errorMessage = priceError,
                     modifier = Modifier.weight(1f)
                 )
 
-                // Input Stok
                 CustomTextField(
                     value = stockText,
-                    onValueChange = { stockText = it; stockError = null },
+                    onValueChange = { stockText = it },
                     label = "Stok",
                     keyboardType = KeyboardType.Number,
-                    isError = stockError != null,
-                    errorMessage = stockError,
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            // Input Deskripsi
+            // --- INPUT DISKON (NEW) ---
+            CustomTextField(
+                value = discountPriceText,
+                onValueChange = { discountPriceText = it },
+                label = "Harga Diskon (Opsional)",
+                placeholder = "Kosongkan jika tidak ada promo",
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             CustomTextField(
                 value = description,
-                onValueChange = { description = it; descriptionError = null },
+                onValueChange = { description = it },
                 label = "Deskripsi Produk",
                 maxLines = 5,
-                isError = descriptionError != null,
-                errorMessage = descriptionError
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Tombol Unggah
             PrimaryButton(
                 text = "UNGGAH PRODUK",
                 onClick = {
-                    if (validateUploadInput(selectedImageUri, name, description, priceText, stockText,
-                            { nameError = it }, { descriptionError = it }, { priceError = it }, { stockError = it }, { imageError = it })) {
+                    val priceInt = priceText.toIntOrNull() ?: 0
+                    val discountInt = discountPriceText.toIntOrNull() // Bisa null
+                    val stockInt = stockText.toIntOrNull() ?: 0
 
-                        val priceInt = priceText.toIntOrNull() ?: 0
-                        val stockInt = stockText.toIntOrNull() ?: 0
+                    if (selectedImageUri != null && name.isNotBlank() && priceInt > 0) {
                         val imageFile = FileUtils.uriToFile(selectedImageUri!!, context)
-
-                        viewModel.uploadSaka(imageFile, name, selectedCategory, description, priceInt, stockInt)
+                        viewModel.uploadSaka(
+                            imageFile,
+                            name,
+                            selectedCategory,
+                            description,
+                            priceInt,
+                            discountInt,
+                            stockInt
+                        )
+                    } else {
+                        if (selectedImageUri == null) imageError = "Foto wajib ada"
+                        if (name.isBlank()) nameError = "Nama wajib diisi"
+                        if (priceInt <= 0) priceError = "Harga tidak valid"
                     }
                 },
                 isLoading = uploadState is UiState.Loading
             )
         }
     }
-}
-
-// Fungsi Validasi Input Upload
-private fun validateUploadInput(
-    imageUri: Uri?,
-    name: String,
-    description: String,
-    priceText: String,
-    stockText: String,
-    onNameError: (String) -> Unit,
-    onDescriptionError: (String) -> Unit,
-    onPriceError: (String) -> Unit,
-    onStockError: (String) -> Unit,
-    onImageError: (String) -> Unit
-): Boolean {
-    var isValid = true
-    if (imageUri == null) { onImageError("Foto wajib dipilih"); isValid = false }
-    if (name.isBlank()) { onNameError("Nama produk wajib diisi"); isValid = false }
-    if (description.isBlank()) { onDescriptionError("Deskripsi wajib diisi"); isValid = false }
-
-    val priceInt = priceText.toIntOrNull()
-    if (priceText.isBlank() || priceInt == null || priceInt <= 0) {
-        onPriceError("Harga wajib diisi angka > 0"); isValid = false
-    }
-
-    // Validasi Stok
-    val stockInt = stockText.toIntOrNull()
-    if (stockText.isBlank() || stockInt == null || stockInt < 0) {
-        onStockError("Stok wajib diisi angka >= 0"); isValid = false
-    }
-
-    return isValid
 }
