@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
@@ -178,5 +179,36 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
 
     fun resetChangePassState() {
         _changePassState.value = UiState.Idle
+    }
+
+    private val _uploadPhotoState = MutableStateFlow<UiState<String>>(UiState.Idle)
+    val uploadPhotoState: StateFlow<UiState<String>> = _uploadPhotoState.asStateFlow()
+
+    fun uploadPhoto(file: java.io.File) {
+        viewModelScope.launch {
+            _uploadPhotoState.value = UiState.Loading
+            try {
+                val user = repository.getUser().first()
+
+                // Konversi file ke MultipartBody
+                val requestImageFile = okhttp3.RequestBody.create("image/jpeg".toMediaTypeOrNull(), file)
+                val imageMultipart = MultipartBody.Part.createFormData("photo", file.name, requestImageFile)
+
+                val response = repository.updateProfilePhoto(user.token, imageMultipart)
+                if (!response.error) {
+                    _uploadPhotoState.value = UiState.Success("Foto profil berhasil diperbarui!")
+                    loadUserProfile() // Refresh data profil agar foto langsung berubah
+                } else {
+                    _uploadPhotoState.value = UiState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _uploadPhotoState.value = UiState.Error(e.message ?: "Terjadi kesalahan")
+            }
+        }
+    }
+
+    // Tambahkan fungsi ini untuk menghilangkan error resetUploadPhotoState
+    fun resetUploadPhotoState() {
+        _uploadPhotoState.value = UiState.Idle
     }
 }

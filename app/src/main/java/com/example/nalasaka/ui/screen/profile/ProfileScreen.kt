@@ -1,5 +1,9 @@
 package com.example.nalasaka.ui.screen.profile
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,12 +13,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos // Import icon panah
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Favorite // Import icon Love
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,9 +29,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -38,6 +45,8 @@ import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import com.example.nalasaka.data.remote.response.ProfileData
 import com.example.nalasaka.ui.theme.BurntOrangeish
+import com.example.nalasaka.utils.FileUtils
+import java.io.File
 
 @Composable
 fun getAuthViewModel(navController: NavHostController): AuthViewModel {
@@ -51,12 +60,27 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(factory = ViewModelFactory.getInstance(navController.context))
 ) {
     val profileState by viewModel.profileState.collectAsState()
+    val uploadPhotoState by viewModel.uploadPhotoState.collectAsState()
     val authViewModel = getAuthViewModel(navController)
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
-    // [FIX] Force reload profil setiap kali layar ini dibuka/aktif
     LaunchedEffect(Unit) {
         viewModel.loadUserProfile()
+    }
+
+    LaunchedEffect(uploadPhotoState) {
+        when (val state = uploadPhotoState) {
+            is UiState.Success -> {
+                Toast.makeText(context, state.data, Toast.LENGTH_SHORT).show()
+                viewModel.resetUploadPhotoState()
+            }
+            is UiState.Error -> {
+                Toast.makeText(context, state.errorMessage, Toast.LENGTH_SHORT).show()
+                viewModel.resetUploadPhotoState()
+            }
+            else -> {}
+        }
     }
 
     Scaffold(
@@ -86,7 +110,11 @@ fun ProfileScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    ProfileHeader(profile = profile)
+                    ProfileHeader(
+                        profile = profile,
+                        onUploadPhoto = { file -> viewModel.uploadPhoto(file) },
+                        isUploading = uploadPhotoState is UiState.Loading
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -105,7 +133,6 @@ fun ProfileScreen(
                                     color = Color.Gray
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
-                                // [PERBAIKAN] Tampilkan Nama Toko + Centang HIJAU jika verified
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         text = profile.storeName,
@@ -118,7 +145,7 @@ fun ProfileScreen(
                                         Icon(
                                             imageVector = Icons.Filled.CheckCircle,
                                             contentDescription = "Verified Store",
-                                            tint = Color(0xFF07C91F), // HIJAU
+                                            tint = Color(0xFF07C91F),
                                             modifier = Modifier.size(24.dp)
                                         )
                                     }
@@ -132,7 +159,6 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // [BARU] Menu Tambahan: Aktivitas Saya (Wishlist)
                     Text(
                         text = "Aktivitas Saya",
                         style = MaterialTheme.typography.titleMedium,
@@ -150,18 +176,14 @@ fun ProfileScreen(
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
                         Column {
-                            // Menu Wishlist
                             ProfileMenuItem(
                                 icon = Icons.Default.Favorite,
                                 title = "Wishlist Saya",
                                 onClick = { navController.navigate(Screen.Wishlist.route) }
                             )
-                            // Anda bisa menambahkan menu lain di sini (misal: Riwayat Transaksi via menu)
-                            // [TAMBAHAN] Menu Ganti Password
-                            // Pastikan import Icons.Default.Lock
                             HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
                             ProfileMenuItem(
-                                icon = androidx.compose.material.icons.Icons.Default.Lock,
+                                icon = Icons.Default.Lock,
                                 title = "Ganti Password",
                                 onClick = { navController.navigate(Screen.ChangePassword.route) }
                             )
@@ -182,12 +204,8 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // LOGIKA TOMBOL STATUS & VERIFIKASI
                     if (profile.role != "seller") {
-                        // Kalau bukan seller -> Tawarkan jadi seller
-                        TextButton(onClick = {
-                            navController.navigate(Screen.VerifySeller.route)
-                        }) {
+                        TextButton(onClick = { navController.navigate(Screen.VerifySeller.route) }) {
                             Text(
                                 text = "Mulai Menjual",
                                 color = MaterialTheme.colorScheme.primary,
@@ -196,12 +214,10 @@ fun ProfileScreen(
                             )
                         }
                     } else {
-                        // Kalau SUDAH seller, cek status verifikasi
                         when (profile.verificationStatus) {
                             "verified" -> {
-                                // Sudah Verified -> Tampilkan Badge Status Teks
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF07C91F)) // HIJAU
+                                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF07C91F))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text("Akun Penjual Terverifikasi", color = Color(0xFF07C91F), fontWeight = FontWeight.Bold)
                                 }
@@ -209,25 +225,17 @@ fun ProfileScreen(
                             "pending" -> {
                                 Text("Menunggu Verifikasi...", color = Color.Gray)
                             }
-                            else -> { // 'none' atau 'rejected'
-                                // Belum Verified -> Tawarkan Upload Dokumen
-                                TextButton(onClick = {
-                                    navController.navigate(Screen.UploadCertification.route)
-                                }) {
+                            else -> {
+                                TextButton(onClick = { navController.navigate(Screen.UploadCertification.route) }) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Filled.VerifiedUser, null, tint = BurntOrangeish)
+                                        Icon(Icons.Default.VerifiedUser, null, tint = BurntOrangeish)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = "Verifikasi Akun (Upload Dokumen)",
-                                            color = BurntOrangeish,
-                                            fontWeight = FontWeight.Bold
-                                        )
+                                        Text(text = "Verifikasi Akun (Upload Dokumen)", color = BurntOrangeish, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
                         }
                     }
-
                     Spacer(modifier = Modifier.height(32.dp))
                 }
             }
@@ -237,7 +245,57 @@ fun ProfileScreen(
 }
 
 @Composable
-fun ProfileHeader(profile: ProfileData) {
+fun ProfileHeader(
+    profile: ProfileData,
+    onUploadPhoto: (File) -> Unit,
+    isUploading: Boolean
+) {
+    val context = LocalContext.current
+    var showSourceDialog by remember { mutableStateOf(false) }
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Launcher Galeri
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { onUploadPhoto(FileUtils.uriToFile(it, context)) }
+    }
+
+    // Launcher Kamera
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && tempCameraUri != null) {
+            onUploadPhoto(FileUtils.uriToFile(tempCameraUri!!, context))
+        }
+    }
+
+    // Dialog Pilihan Sumber
+    if (showSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showSourceDialog = false },
+            title = { Text("Ubah Foto Profil") },
+            text = { Text("Pilih sumber foto, Yang Mulia.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSourceDialog = false
+                    galleryLauncher.launch("image/*")
+                }) { Text("Galeri") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showSourceDialog = false
+                    val photoFile = File(context.cacheDir, "profile_${System.currentTimeMillis()}.jpg")
+                    val uri = FileProvider.getUriForFile(
+                        context, "${context.packageName}.provider", photoFile
+                    )
+                    tempCameraUri = uri
+                    cameraLauncher.launch(uri)
+                }) { Text("Kamera") }
+            }
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -246,18 +304,40 @@ fun ProfileHeader(profile: ProfileData) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Card(
-                    shape = CircleShape,
-                    colors = CardDefaults.cardColors(containerColor = Color.LightGray),
-                    modifier = Modifier.size(80.dp)
-                ) {
-                    AsyncImage(
-                        model = profile.photoUrl,
-                        contentDescription = profile.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().clip(CircleShape)
-                    )
+                Box(contentAlignment = Alignment.Center) {
+                    Card(
+                        shape = CircleShape,
+                        colors = CardDefaults.cardColors(containerColor = Color.LightGray),
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clickable(enabled = !isUploading) { showSourceDialog = true }
+                    ) {
+                        AsyncImage(
+                            model = profile.photoUrl,
+                            contentDescription = profile.name,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            error = rememberVectorPainter(Icons.Default.Person)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .align(Alignment.BottomEnd)
+                            .background(BurntOrangeish, CircleShape)
+                            .padding(4.dp)
+                    ) {
+                        Icon(Icons.Default.PhotoCamera, null, tint = Color.White, modifier = Modifier.fillMaxSize())
+                    }
+
+                    if (isUploading) {
+                        CircularProgressIndicator(modifier = Modifier.size(80.dp), color = BurntOrangeish)
+                    }
                 }
+
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column {
@@ -288,13 +368,11 @@ fun ProfileHeader(profile: ProfileData) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // [BARU] Statistik Follow
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 FollowStatItem("Pengikut", profile.followersCount.toString())
-                // Garis pemisah vertikal kecil
                 Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color.White.copy(alpha = 0.3f)))
                 FollowStatItem("Mengikuti", profile.followingCount.toString())
             }
@@ -367,7 +445,6 @@ fun ProfileDetailItem(label: String, value: String) {
     }
 }
 
-// [BARU] Helper Component untuk Item Menu Profil
 @Composable
 fun ProfileMenuItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,

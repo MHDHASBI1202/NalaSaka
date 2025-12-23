@@ -74,6 +74,10 @@ class UserRepository private constructor(
         return apiService.getTransactionHistory("Bearer $token", userId)
     }
 
+    suspend fun updateProfilePhoto(token: String, file: MultipartBody.Part): ResponseSaka {
+        return apiService.updateProfilePhoto("Bearer $token", file)
+    }
+
     suspend fun checkout(token: String, userId: String, sakaId: String, quantity: Int, paymentMethod: String): CheckoutResponse {
         return apiService.checkoutTransaction("Bearer $token", userId, sakaId, quantity, paymentMethod)
     }

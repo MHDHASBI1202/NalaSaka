@@ -281,4 +281,11 @@ interface ApiService {
     suspend fun broadcastPromo(
         @Header("Authorization") token: String
     ): ResponseSaka
+
+    @Multipart
+    @POST("user/photo")
+    suspend fun updateProfilePhoto(
+        @Header("Authorization") token: String,
+        @Part photo: MultipartBody.Part
+    ): ResponseSaka
 }

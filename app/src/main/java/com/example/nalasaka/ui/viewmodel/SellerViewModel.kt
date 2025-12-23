@@ -2,17 +2,17 @@ package com.example.nalasaka.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.nalasaka.data.pref.UserPreference
 import com.example.nalasaka.data.remote.response.OrderItem
 import com.example.nalasaka.data.remote.response.SakaItem
 import com.example.nalasaka.data.remote.response.SellerStats
 import com.example.nalasaka.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class SellerViewModel(private val repository: UserRepository) : ViewModel() {
+class SellerViewModel(private val repository: UserRepository, userPreference: UserPreference) : ViewModel() {
 
     private val _myProductsState = MutableStateFlow<UiState<List<SakaItem>>>(UiState.Idle)
     val myProductsState = _myProductsState.asStateFlow()
