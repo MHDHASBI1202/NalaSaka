@@ -62,6 +62,7 @@ import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import com.google.android.gms.location.LocationServices
 import android.Manifest
+import androidx.compose.material.icons.filled.Campaign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -285,7 +286,10 @@ fun SellerDashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Di dalam SellerDashboardScreen.kt, cari bagian "Menu Kelola"
             Text(text = "Menu Kelola", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
+
+// Baris Pertama Menu
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 SellerMenuCard(
                     title = "Upload Barang",
@@ -301,7 +305,20 @@ fun SellerDashboardScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+// Baris Kedua (Menu Baru untuk Broadcast)
+            Row(modifier = Modifier.fillMaxWidth()) {
+                SellerMenuCard(
+                    title = "Siarkan Promo",
+                    icon = Icons.Default.Campaign, // Menggunakan ikon toa/kampanye
+                    modifier = Modifier.fillMaxWidth(0.5f), // Setengah lebar agar sejajar dengan atas
+                    onClick = {
+                        // Panggil fungsi broadcast dari ViewModel
+                        sellerViewModel.broadcastPromo()
+                    }
+                )
+            }
 
             Card(
                 modifier = Modifier.fillMaxWidth(),

@@ -116,6 +116,19 @@ class SellerViewModel(private val repository: UserRepository, userPreference: Us
         }
     }
 
+    fun broadcastPromo() {
+        viewModelScope.launch {
+            _actionState.value = UiState.Loading
+            try {
+                // Memanggil fungsi broadcast di repository yang sudah terhubung ke ApiService
+                repository.broadcastPromo(getToken())
+                _actionState.value = UiState.Success("Promo berhasil disiarkan ke pengikut, Yang Mulia!")
+            } catch (e: Exception) {
+                _actionState.value = UiState.Error(e.message ?: "Gagal menyiarkan promo")
+            }
+        }
+    }
+
     fun resetActionState() {
         _actionState.value = UiState.Idle
     }
