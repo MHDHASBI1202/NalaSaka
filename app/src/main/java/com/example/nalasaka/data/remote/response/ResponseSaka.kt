@@ -2,7 +2,6 @@ package com.example.nalasaka.data.remote.response
 
 import com.google.gson.annotations.SerializedName
 
-// General Response for operations like Register, Login, Add Saka
 data class ResponseSaka(
     @field:SerializedName("error")
     val error: Boolean,
@@ -15,7 +14,6 @@ data class ResponseSaka(
     val loginResult: LoginResult? = null
 )
 
-// Data class untuk hasil Login
 data class LoginResult(
     @field:SerializedName("name")
     val name: String,
@@ -30,7 +28,6 @@ data class LoginResult(
     val role: String = "customer"
 )
 
-// Data class untuk satu item produk Tani
 data class SakaItem(
     @field:SerializedName("name")
     val name: String,
@@ -69,7 +66,6 @@ data class SakaItem(
     val sellerPhotoUrl: String? = null
 )
 
-// Response untuk Mendapatkan Semua Produk
 data class AllSakaResponse(
     @field:SerializedName("error")
     val error: Boolean,
@@ -81,7 +77,6 @@ data class AllSakaResponse(
     val listSaka: List<SakaItem>
 )
 
-// Response untuk Mendapatkan Detail Produk
 data class DetailSakaResponse(
     @field:SerializedName("error")
     val error: Boolean,
@@ -93,7 +88,6 @@ data class DetailSakaResponse(
     val saka: SakaItem
 )
 
-// Model untuk data Tracking (Lokasi & Resi)
 data class TrackingData(
     @field:SerializedName("location")
     val location: String,
@@ -102,12 +96,11 @@ data class TrackingData(
     val resi: String
 )
 
-// Model untuk satu item Riwayat Transaksi
 data class TransactionItem(
     @field:SerializedName("id")
     val id: String,
 
-    @field:SerializedName("sakaId") // <-- TAMBAHAN DARI API
+    @field:SerializedName("sakaId")
     val sakaId: String,
 
     @field:SerializedName("productName")
@@ -120,16 +113,33 @@ data class TransactionItem(
     val price: Int,
 
     @field:SerializedName("status")
-    val status: String, // PENDING, DIPROSES, DIKIRIM, dll
+    val status: String,
 
     @field:SerializedName("date")
     val date: String,
 
     @field:SerializedName("tracking")
-    val tracking: TrackingData
+    val tracking: TrackingData,
+
+    @field:SerializedName("shipping_method")
+    val shippingMethod: String?,
+
+    @field:SerializedName("pickup_code")
+    val pickupCode: String?,
+
+    @field:SerializedName("store_name")
+    val storeName: String?,
+
+    @field:SerializedName("store_address")
+    val storeAddress: String?,
+
+    @field:SerializedName("latitude")
+    val latitude: Double?,
+
+    @field:SerializedName("longitude")
+    val longitude: Double?
 )
 
-// Response untuk GET /api/transactions
 data class TransactionHistoryResponse(
     @field:SerializedName("error")
     val error: Boolean,
@@ -141,7 +151,6 @@ data class TransactionHistoryResponse(
     val history: List<TransactionItem>
 )
 
-// Response Sederhana untuk Checkout (POST)
 data class CheckoutResponse(
     @field:SerializedName("error")
     val error: Boolean,
@@ -160,12 +169,10 @@ data class TransactionResponse(
     @field:SerializedName("message")
     val message: String,
 
-    // Anda bisa menambahkan field transaction jika ingin mengambil data balik dari API
     @field:SerializedName("transaction")
     val transaction: Any? = null
 )
 
-// Data class untuk Detail Profil Pengguna
 data class ProfileData(
     @field:SerializedName("userId")
     val userId: String,
@@ -215,7 +222,6 @@ data class FollowResponse(
     val isFollowing: Boolean
 )
 
-// Response untuk Mendapatkan Detail Profil Pengguna
 data class ProfileResponse(
     @field:SerializedName("error")
     val error: Boolean,
@@ -227,7 +233,6 @@ data class ProfileResponse(
     val user: ProfileData
 )
 
-// Model Data Stats (Seller Dashboard)
 data class SellerStats(
     @field:SerializedName("revenue")
     val revenue: Int,
@@ -241,7 +246,6 @@ data class SellerStats(
     @field:SerializedName("daily_sales")
     val dailySales: List<DailySalesItem> = emptyList(),
 
-    // [BARU] List statistik per produk
     @field:SerializedName("product_performance")
     val productPerformance: List<ProductSalesStat> = emptyList()
 )
@@ -253,7 +257,6 @@ data class DailySalesItem(
     val amount: Int
 )
 
-// [BARU] Model item statistik produk
 data class ProductSalesStat(
     @field:SerializedName("name")
     val name: String,
@@ -268,7 +271,6 @@ data class ProductSalesStat(
     val totalRevenue: Int
 )
 
-// Response Stats
 data class SellerStatsResponse(
     @field:SerializedName("error")
     val error: Boolean,
@@ -280,13 +282,10 @@ data class SellerStatsResponse(
     val stats: SellerStats
 )
 
-// --- BAGIAN BARU: REVIEW & RATING (UPDATED) ---
-
 data class ReviewItem(
     @field:SerializedName("id")
     val id: String,
 
-    // [BARU] Field ini Wajib ada untuk membedakan ulasan saya vs orang lain
     @field:SerializedName("userId")
     val userId: String,
 
@@ -331,7 +330,6 @@ data class ReviewApiResponse(
     val data: ReviewData
 )
 
-// Response untuk Cek/Toggle Wishlist
 data class WishlistResponse(
     @field:SerializedName("error")
     val error: Boolean,
@@ -343,7 +341,6 @@ data class WishlistResponse(
     val isWishlist: Boolean
 )
 
-// Response untuk Get Cart
 data class CartResponse(
     @field:SerializedName("error") val error: Boolean,
     @field:SerializedName("message") val message: String,
@@ -367,15 +364,19 @@ data class CartItem(
 
 data class OrderItem(
     @field:SerializedName("id") val id: Int,
-    @field:SerializedName("productName") val productName: String,
+    @field:SerializedName("product_name") val productName: String,
     @field:SerializedName("quantity") val quantity: Int,
     @field:SerializedName("status") val status: String,
+    @field:SerializedName("buyer_name") val buyerName: String,
+    @field:SerializedName("shipping_method") val shippingMethod: String,
     @field:SerializedName("resiNumber") val resiNumber: String? = null,
-    @field:SerializedName("currentLocation") val currentLocation: String? = null,
-    @field:SerializedName("totalPrice") val totalPrice: Int
+    @field:SerializedName("full_address") val fullAddress: String,
+    @field:SerializedName("totalPrice") val totalPrice: Int,
+    @field:SerializedName("latitude") val latitude: Double? = null,
+    @field:SerializedName("longitude") val longitude: Double? = null,
+    @field:SerializedName("pickupCode") val pickupCode: String? = null
 )
 
-// Response untuk Update Lokasi Toko
 data class ResponseStore(
     @field:SerializedName("error") val error: Boolean,
     @field:SerializedName("message") val message: String

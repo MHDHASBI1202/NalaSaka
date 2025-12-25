@@ -10,47 +10,41 @@ import com.example.nalasaka.di.Injection
 
 class ViewModelFactory(
     private val repository: UserRepository,
-    private val userPreference: UserPreference // Tambahkan parameter ini
+    private val userPreference: UserPreference
 ) : ViewModelProvider.NewInstanceFactory() {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
-            // 1. Authentication ViewModels (Login/Register)
             modelClass.isAssignableFrom(AuthViewModel::class.java) -> {
                 AuthViewModel(repository) as T
             }
-            // 2. Home ViewModel (Modul Produk & Pemasaran)
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> {
                 HomeViewModel(repository) as T
             }
-            // 3. Detail Product ViewModel
             modelClass.isAssignableFrom(DetailViewModel::class.java) -> {
                 DetailViewModel(repository) as T
             }
-            // 4. Add Saka (Upload Foto Barang) ViewModel
             modelClass.isAssignableFrom(AddSakaViewModel::class.java) -> {
                 AddSakaViewModel(repository) as T
             }
-
             modelClass.isAssignableFrom(CartViewModel::class.java) -> {
                 CartViewModel(repository) as T
             }
-            // 5. Transaction ViewModel (Modul Transaksi & Logistik)
             modelClass.isAssignableFrom(TransactionViewModel::class.java) -> {
                 TransactionViewModel(repository) as T
             }
-            // 6. Seller ViewModel -> [SEKARANG SUDAH ADA USERPREFERENCE]
             modelClass.isAssignableFrom(SellerViewModel::class.java) -> {
                 SellerViewModel(repository, userPreference) as T
             }
-            // 7. Profile ViewModel
             modelClass.isAssignableFrom(ProfileViewModel::class.java) -> {
                 ProfileViewModel(repository) as T
             }
-            // 8. Wishlist ViewModel
             modelClass.isAssignableFrom(WishlistViewModel::class.java) -> {
                 WishlistViewModel(repository) as T
+            }
+            modelClass.isAssignableFrom(SellerOrderViewModel::class.java) -> {
+                SellerOrderViewModel(repository) as T
             }
 
             else -> throw IllegalArgumentException("Unknown ViewModel class: " + modelClass.name)
@@ -64,9 +58,7 @@ class ViewModelFactory(
         @JvmStatic
         fun getInstance(context: Context): ViewModelFactory {
             return INSTANCE ?: synchronized(ViewModelFactory::class.java) {
-                // Ambil instance repository dari Injection
                 val repository = Injection.provideRepository(context)
-                // Ambil instance userPreference dari context datastore
                 val userPreference = UserPreference.getInstance(context.dataStore)
 
                 INSTANCE ?: ViewModelFactory(repository, userPreference).also { INSTANCE = it }

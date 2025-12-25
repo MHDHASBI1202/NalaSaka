@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit
 class ApiConfig {
     companion object {
         fun getApiService(): ApiService {
-            // Interceptor untuk melihat log request dan response (BERGUNA untuk debug)
             val loggingInterceptor = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
 
             val acceptInterceptor = Interceptor { chain ->
@@ -21,12 +20,12 @@ class ApiConfig {
             }
             val client = OkHttpClient.Builder()
                 .addInterceptor(loggingInterceptor)
-                .connectTimeout(30, TimeUnit.SECONDS) // Waktu koneksi
-                .readTimeout(30, TimeUnit.SECONDS)    // Waktu membaca response
-                .writeTimeout(30, TimeUnit.SECONDS)   // Waktu mengirim data
+                .addInterceptor(acceptInterceptor)
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
                 .build()
             val retrofit = Retrofit.Builder()
-                // !!! GANTI DENGAN BASE_URL API BACKEND ANDA !!!
                 .baseUrl("http://10.0.2.2/nalasaka-api/public/api/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)

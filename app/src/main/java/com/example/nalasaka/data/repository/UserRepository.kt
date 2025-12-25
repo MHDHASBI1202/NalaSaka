@@ -5,6 +5,7 @@ import com.example.nalasaka.data.pref.UserPreference
 import com.example.nalasaka.data.remote.response.*
 import com.example.nalasaka.data.remote.retrofit.ApiService
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 
@@ -90,6 +91,14 @@ class UserRepository private constructor(
         return apiService.updateUserProfile("Bearer $token", name, phoneNumber, address, storeName)
     }
 
+    suspend fun updateStatus(token: String, transactionId: Int, status: String): ResponseSaka {
+        return apiService.updateOrderStatus("Bearer $token", transactionId, status)
+    }
+
+    suspend fun getAuthToken(): String {
+        return userPreference.getUser().first().token
+    }
+
     suspend fun activateSellerMode(token: String, storeName: String): ProfileResponse {
         return apiService.activateSellerMode("Bearer $token", storeName)
     }
@@ -165,11 +174,11 @@ class UserRepository private constructor(
     }
 
     suspend fun getSellerOrders(token: String): List<OrderItem> {
-        return apiService.getSellerOrders(token)
+        return apiService.getSellerOrders("Bearer $token")
     }
 
     suspend fun updateOrderStatus(token: String, orderId: Int, status: String): ResponseSaka {
-        return apiService.updateOrderStatus(token, orderId, status)
+        return apiService.updateOrderStatus("Bearer $token", orderId, status)
     }
 
     suspend fun updateStoreLocation(token: String, address: String, lat: Double, lng: Double): ResponseStore {
@@ -184,7 +193,9 @@ class UserRepository private constructor(
         fullAddress: String,
         subtotal: Int,
         totalAmount: Int,
-        shippingMethod: String
+        shippingMethod: String,
+        lat: Double?,
+        lng: Double?
     ): TransactionResponse {
         return apiService.createTransaction(
             "Bearer $token",
@@ -194,7 +205,9 @@ class UserRepository private constructor(
             fullAddress,
             subtotal,
             totalAmount,
-            shippingMethod
+            shippingMethod,
+            lat,
+            lng
         )
     }
 

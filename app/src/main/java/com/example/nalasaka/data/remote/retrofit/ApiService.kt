@@ -96,7 +96,9 @@ interface ApiService {
         @Field("full_address") fullAddress: String,
         @Field("subtotal") subtotal: Int,
         @Field("total_price") totalAmount: Int,
-        @Field("shipping_method") shippingMethod: String
+        @Field("shipping_method") shippingMethod: String,
+        @Field("latitude") latitude: Double?,
+        @Field("longitude") longitude: Double?
     ): TransactionResponse
 
     @FormUrlEncoded
@@ -269,9 +271,8 @@ interface ApiService {
         @Header("Authorization") token: String // Tambahkan token
     ): List<OrderItem>
 
-    // TAMBAHKAN: Fungsi untuk update status pesanan (Sesuai routes/api.php Laravel)
     @FormUrlEncoded
-    @PATCH("transactions/{id}/status")
+    @POST("transactions/update/{id}")
     suspend fun updateOrderStatus(
         @Header("Authorization") token: String,
         @Path("id") id: Int,

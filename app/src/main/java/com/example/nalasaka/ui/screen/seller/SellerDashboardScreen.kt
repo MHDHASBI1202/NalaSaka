@@ -301,9 +301,7 @@ fun SellerDashboardScreen(
                     title = "Pesanan Masuk",
                     icon = Icons.Default.Inventory,
                     modifier = Modifier.weight(1f),
-                    onClick = {
-                        navController.navigate("seller_orders_list")
-                    }
+                    onClick = { navController.navigate(Screen.SellerOrders.route) }
                 )
                 SellerMenuCard(
                     title = "Siarkan Promo",

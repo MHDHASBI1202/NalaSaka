@@ -1,44 +1,37 @@
 package com.example.nalasaka.ui.navigation
 
 sealed class Screen(val route: String) {
-    // Rute Autentikasi dan Pembuka
     object Welcome : Screen("welcome")
     object Login : Screen("login")
     object Register : Screen("register")
 
-    // Rute Modul Produk & Pemasaran (Inti Aplikasi)
     object Home : Screen("home")
     object AddSaka : Screen("addsaka")
 
-    // --- TAMBAHAN UNTUK MODUL PRODUK ---
     object Produk : Screen("produk_nav")
 
-    // --- TAMBAHAN UNTUK MODUL PROFIL ---
     object Profile : Screen("profile")
     object EditProfile : Screen("edit_profile")
     object VerifySeller : Screen("verify_seller")
 
-    // [NEW] Screen untuk upload sertifikat
     object UploadCertification : Screen("upload_certification")
 
-    // --- DASHBOARD SELLER ---
     object SellerDashboard : Screen("seller_dashboard")
     object SellerInventory : Screen("seller_inventory")
 
-    // Rute Detail Produk
+    object SellerOrders : Screen("seller_orders_list")
+
     object Detail : Screen("detail/{sakaId}") {
         fun createRoute(sakaId: String) = "detail/$sakaId"
     }
 
-    // Rute Wishlist
     object Wishlist : Screen("wishlist")
 
-    // [BARU] Rute Keranjang
     object Cart : Screen("cart")
 
-    // Rute untuk Riwayat Transaksi
     object TransactionHistory : Screen("transaction_history")
 
     object ForgotPassword : Screen("forgot_password")
+
     object ChangePassword : Screen("change_password")
 }

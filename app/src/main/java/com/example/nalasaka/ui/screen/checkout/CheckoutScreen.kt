@@ -108,12 +108,11 @@ fun CheckoutScreen(
     val userTokenState by cartViewModel.getUser().collectAsState(initial = null)
     val userToken = userTokenState?.token ?: ""
 
-    var savedAddress by remember { mutableStateOf("") } // Alamat Utama (Dari GPS/Manual Pop-up)
-    var tempAddress by remember { mutableStateOf("") }  // Alamat Sementara (Manual di Layar)
+    var savedAddress by remember { mutableStateOf("") }
+    var tempAddress by remember { mutableStateOf("") }
     var showAddressDialog by remember { mutableStateOf(false) }
     var isEditingTempAddress by remember { mutableStateOf(false) }
 
-    // --- State Dropdown & Ringkasan ---
     var shippingType by remember { mutableStateOf("Diantar") }
     val shippingMethods = listOf(Pair("Reguler", 10000), Pair("Kilat", 20000))
     var expandedCourier by remember { mutableStateOf(false) }
@@ -123,12 +122,10 @@ fun CheckoutScreen(
     var expandedPayment by remember { mutableStateOf(false) }
     var selectedPayment by remember { mutableStateOf(paymentMethods[0]) }
 
-    // Ambil data terbaru dari database saat masuk checkout
     LaunchedEffect(Unit) {
         cartViewModel.loadCart()
     }
 
-    // --- DIALOG TENTUKAN LOKASI (KHUSUS ALAMAT UTAMA) ---
     if (showAddressDialog) {
         AlertDialog(
             onDismissRequest = { showAddressDialog = false },
@@ -206,7 +203,6 @@ fun CheckoutScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ALAMAT PENGIRIMAN (Hanya muncul jika Diantar)
             if (shippingType == "Diantar") {
                 Text("Alamat Pengiriman", fontWeight = FontWeight.Bold)
                 Card(
@@ -223,7 +219,6 @@ fun CheckoutScreen(
                 }
             }
 
-            // --- BAGIAN DETAIL PESANAN PER TOKO (INI PERUBAHAN UTAMANYA) ---
             Spacer(modifier = Modifier.height(24.dp))
             Text("Detail Pesanan", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
 
@@ -243,7 +238,6 @@ fun CheckoutScreen(
                         }
                         HorizontalDivider(Modifier.padding(vertical = 12.dp))
 
-                        // Barang-barang di Toko ini
                         items.forEach { item ->
                             Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 AsyncImage(
@@ -260,7 +254,6 @@ fun CheckoutScreen(
                             }
                         }
 
-                        // TAMPILAN MAPS (Hanya muncul jika Ambil ke Toko)
                         if (shippingType == "Ambil ke Toko") {
                             val storeLat = items.first().latitude
                             val storeLng = items.first().longitude
@@ -303,7 +296,6 @@ fun CheckoutScreen(
                 }
             }
 
-            // --- KURIR & PEMBAYARAN (Hanya muncul jika Diantar) ---
             if (shippingType == "Diantar") {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("Metode Pengiriman", fontWeight = FontWeight.Bold)
@@ -344,7 +336,6 @@ fun CheckoutScreen(
                 }
             }
 
-            // --- RINGKASAN PEMBAYARAN ---
             Spacer(modifier = Modifier.height(24.dp))
             val ongkir = if(shippingType == "Diantar") selectedCourier.second else 0
             val biayaJasa = if(shippingType == "Diantar") 1000 else 0
@@ -369,39 +360,51 @@ fun CheckoutScreen(
                     if(finalAddr.isEmpty() && shippingType == "Diantar") {
                         Toast.makeText(context, "Alamat belum diisi!", Toast.LENGTH_SHORT).show()
                     } else {
-                        // Cek apakah data keranjang berhasil dimuat
                         if (cartState is UiState.Success) {
                             val items = (cartState as UiState.Success).data
 
-                            // LOOPING: Karena checkout dari Cart, kita proses tiap barang
-                            items.forEachIndexed { index, item ->
-                                cartViewModel.processCheckout(
-                                    token = userToken,
-                                    sakaId = item.sakaId.toInt(), // Ambil ID produk dari item cart
-                                    qty = item.quantity,      // Ambil Qty dari item cart
-                                    method = selectedPayment, // Gunakan state selectedPayment
-                                    addr = finalAddr,
-                                    sub = item.price * item.quantity,
-                                    total = subtotal + ongkir + biayaJasa,
-                                    ship = shippingType,
-                                    onSuccess = {
-                                        // Jika ini item terakhir yang diproses, baru pindah halaman
-                                        if (index == items.size - 1) {
-                                            Toast.makeText(context, "Pesanan Berhasil!", Toast.LENGTH_LONG).show()
-                                            navController.navigate(Screen.TransactionHistory.route) {
-                                                popUpTo(Screen.Cart.route) { inclusive = true }
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                                    val userLat = location?.latitude ?: 0.0
+                                    val userLng = location?.longitude ?: 0.0
+
+                                    var completedCount = 0
+                                    items.forEach { item ->
+                                        cartViewModel.processCheckout(
+                                            token = userToken,
+                                            sakaId = item.sakaId.toInt(),
+                                            qty = item.quantity,
+                                            method = selectedPayment,
+                                            addr = finalAddr,
+                                            sub = item.price * item.quantity,
+                                            total = subtotal + ongkir + biayaJasa,
+                                            ship = shippingType,
+                                            lat = userLat,
+                                            lng = userLng,
+                                            onSuccess = {
+                                                completedCount++
+                                                if (completedCount == items.size) {
+                                                    Toast.makeText(context, "Pesanan Berhasil!", Toast.LENGTH_LONG).show()
+                                                    navController.navigate(Screen.TransactionHistory.route) {
+                                                        popUpTo(navController.graph.startDestinationId) {
+                                                            saveState = false
+                                                        }
+                                                        launchSingleTop = true
+                                                        restoreState = false
+                                                    }
+                                                }
                                             }
-                                        }
+                                        )
                                     }
-                                )
+                                    cartViewModel.checkoutCart(selectedPayment)
+                                }
+                            } else {
+                                Toast.makeText(context, "Izin lokasi diperlukan untuk checkout!", Toast.LENGTH_SHORT).show()
                             }
                         }
-                        // MANGGIL FUNGSI CHECKOUT DARI VIEWMODEL
-                        // Parameter paymentMethod disesuaikan dengan dropdown (selectedPayment)
-                        cartViewModel.checkoutCart(selectedPayment)
                     }
                 },
-                isLoading = checkoutState is UiState.Loading // Tampilkan loading saat proses
+                isLoading = checkoutState is UiState.Loading
             )
         }
     }

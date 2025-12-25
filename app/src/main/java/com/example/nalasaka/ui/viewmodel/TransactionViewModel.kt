@@ -41,6 +41,22 @@ class TransactionViewModel(private val repository: UserRepository) : ViewModel()
         }
     }
 
+    fun updateTransactionStatus(transactionId: Int, status: String) {
+        viewModelScope.launch {
+            try {
+                val token = repository.getAuthToken()
+
+                if (token.isNotEmpty()) {
+                    val response = repository.updateStatus(token, transactionId, status)
+                    if (!response.error) {
+                        getHistory()
+                    }
+                }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
     // Fungsi Checkout / Pesan Ulang
     fun checkoutItem(sakaId: String, quantity: Int = 1) { // Parameter sakaId, bukan trxId
         viewModelScope.launch {

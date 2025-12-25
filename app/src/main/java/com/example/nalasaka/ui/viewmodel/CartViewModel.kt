@@ -119,11 +119,13 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
         sub: Int,
         total: Int,
         ship: String,
+        lat: Double?,
+        lng: Double?,
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             try {
-                val response = repository.createTransaction(token, sakaId, qty, method, addr, sub, total, ship)
+                val response = repository.createTransaction(token, sakaId, qty, method, addr, sub, total, ship, lat, lng)
                 if (!response.error) {
                     onSuccess() // Callback jika berhasil
                 }

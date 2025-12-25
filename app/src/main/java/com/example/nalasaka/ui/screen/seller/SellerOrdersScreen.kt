@@ -1,5 +1,8 @@
 package com.example.nalasaka.ui.screen.seller
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,68 +39,136 @@ import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.lazy.items // Pastikan ini ada untuk "items(state.data)"
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.sp
+import com.example.nalasaka.data.remote.response.OrderItem
+import com.example.nalasaka.ui.viewmodel.SellerOrderViewModel
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SellerOrdersScreen(
+fun SellerOrderScreen(
     navController: NavHostController,
-    viewModel: SellerViewModel = viewModel(factory = ViewModelFactory.getInstance(LocalContext.current))
+    viewModel: SellerOrderViewModel = viewModel(factory = ViewModelFactory.getInstance(LocalContext.current))
 ) {
-    val ordersState by viewModel.ordersState.collectAsState()
+    val context = LocalContext.current
+    val state by viewModel.ordersState.collectAsState()
 
-    LaunchedEffect(Unit) { viewModel.loadSellerOrders() }
+    LaunchedEffect(Unit) {
+        viewModel.getSellerOrders()
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Daftar Pesanan Pembeli") })
+            TopAppBar(
+                title = {
+                    Text("Pesanan Masuk Toko", fontWeight = FontWeight.Bold)
+                },
+                navigationIcon = {
+                    androidx.compose.material3.IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Kembali"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (val state = ordersState) {
-                is UiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                is UiState.Success -> {
-                    LazyColumn(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-                        items(state.data) { order ->
-                            Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                                        Text("No Resi: ${order.resiNumber ?: "-"}", fontWeight = FontWeight.Bold)
-                                        Surface(
-                                            color = when(order.status) {
-                                                "PENDING" -> Color.Yellow
-                                                "DIPROSES" -> Color.Cyan
-                                                "DIKIRIM" -> Color.Blue
-                                                "SELESAI" -> Color.Green
-                                                else -> Color.Red
-                                            },
-                                            shape = RoundedCornerShape(4.dp)
-                                        ) {
-                                            Text(order.status, modifier = Modifier.padding(4.dp), fontSize = 10.sp)
-                                        }
-                                    }
-                                    Spacer(Modifier.height(8.dp))
-                                    Text("Produk: ${order.productName}")
-                                    Text("Jumlah: ${order.quantity}")
-                                    Text("Tujuan: ${order.currentLocation}", color = Color.Gray, fontSize = 12.sp)
-
-                                    Spacer(Modifier.height(12.dp))
-                                    Row {
-                                        Button(onClick = { viewModel.updateStatus(order.id, "DIPROSES") }) {
-                                            Text("Proses")
-                                        }
-                                        Spacer(Modifier.width(8.dp))
-                                        OutlinedButton(onClick = { /* Dialog Input Resi */ }) {
-                                            Text("Input Resi")
-                                        }
-                                    }
-                                }
-                            }
-                        }
+        when (val result = state) {
+            is UiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            is UiState.Success -> {
+                LazyColumn(modifier = Modifier.padding(padding).padding(16.dp)) {
+                    items(result.data) { order ->
+                        SellerOrderCard(
+                            order = order,
+                            onUpdate = { status -> viewModel.updateStatus(order.id, status) }
+                        )
                     }
                 }
-                else -> Text("Tidak ada pesanan.", modifier = Modifier.align(Alignment.Center))
+            }
+            is UiState.Error -> Text("Error: ${result.message}")
+            else -> {}
+        }
+    }
+}
+
+@Composable
+fun SellerOrderCard(order: OrderItem, onUpdate: (String) -> Unit) {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Pembeli: ${order.buyerName}", fontWeight = FontWeight.Bold)
+            Text("Produk: ${order.productName} (x${order.quantity})")
+
+            Spacer(Modifier.height(4.dp))
+            Text("Alamat: ${order.fullAddress}", fontSize = 13.sp, color = Color.DarkGray)
+
+            Text("Status: ${order.status}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+
+            Spacer(Modifier.height(12.dp))
+
+            if (order.shippingMethod == "Diantar") {
+                Button(
+                    onClick = {
+                        if (order.latitude != null && order.longitude != null) {
+                            val uri = Uri.parse("google.navigation:q=${order.latitude},${order.longitude}")
+                            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                                setPackage("com.google.android.apps.maps")
+                            }
+                            context.startActivity(intent)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                ) {
+                    Icon(Icons.Default.Map, null)
+                    Text(" NAVIGASI KE RUMAH PEMBELI")
+                }
+
+                if (order.status == "PROSES") {
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = { onUpdate("DIKIRIM") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("KONFIRMASI PENGIRIMAN")
+                    }
+                }
+            }
+
+            if (order.shippingMethod == "Ambil ke Toko") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFFFF9C4), RoundedCornerShape(8.dp))
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("KODE PENGAMBILAN", fontSize = 12.sp, fontWeight = FontWeight.Light)
+                        Text(
+                            text = order.pickupCode ?: "-",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.Black
+                        )
+                    }
+                }
             }
         }
     }
