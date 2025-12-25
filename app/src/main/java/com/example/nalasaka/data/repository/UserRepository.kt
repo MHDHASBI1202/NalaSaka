@@ -13,14 +13,13 @@ class UserRepository private constructor(
     private val apiService: ApiService,
     private val userPreference: UserPreference
 ) {
-    // --- DataStore Operations ---
+
     fun getUser(): Flow<UserModel> = userPreference.getUser()
 
     suspend fun saveUser(user: UserModel) = userPreference.saveUser(user)
 
     suspend fun logout() = userPreference.logout()
 
-    // --- Remote API Operations (REAL DATA ONLY) ---
 
     suspend fun register(name: String, email: String, password: String, phoneNumber: String, address: String, passwordConfirmation: String): ResponseSaka {
         return apiService.register(name, email, phoneNumber, address, password, passwordConfirmation)
@@ -111,7 +110,6 @@ class UserRepository private constructor(
         return apiService.getSellerStats(token)
     }
 
-    // --- MODUL REPUTASI & ANALISIS (NEW) ---
 
     suspend fun getProductReviews(token: String, sakaId: String): ReviewApiResponse {
         return apiService.getProductReviews("Bearer $token", sakaId)
@@ -147,11 +145,9 @@ class UserRepository private constructor(
     suspend fun addToCart(token: String, sakaId: String, qty: Int) = apiService.addToCart("Bearer $token", sakaId, qty)
     suspend fun updateCartQty(token: String, cartId: Int, qty: Int) = apiService.updateCartQty("Bearer $token", cartId, qty)
     suspend fun deleteCartItem(token: String, cartId: Int) = apiService.deleteCartItem("Bearer $token", cartId)
-    // Update fungsi checkoutCart
     suspend fun checkoutCart(token: String, paymentMethod: String) =
         apiService.checkoutCart("Bearer $token", paymentMethod)
 
-    // --- PASSWORD FEATURES ---
     suspend fun forgotPassword(email: String) = apiService.forgotPassword(email)
 
     suspend fun resetPassword(email: String, token: String, pass: String, passConfirm: String) =

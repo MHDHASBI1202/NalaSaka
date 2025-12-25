@@ -162,7 +162,6 @@ fun InventoryItemCard(saka: SakaItem, onEdit: () -> Unit, onDelete: () -> Unit) 
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-                // Badge Stok
                 Surface(
                     color = Color.Black.copy(alpha = 0.6f),
                     shape = RoundedCornerShape(bottomEnd = 8.dp),
@@ -184,7 +183,6 @@ fun InventoryItemCard(saka: SakaItem, onEdit: () -> Unit, onDelete: () -> Unit) 
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Action Buttons
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
                         Icon(Icons.Default.Edit, "Edit", tint = Color.Blue)

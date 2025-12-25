@@ -43,8 +43,6 @@ fun RegisterScreen(
     var addressError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var confirmPasswordError by remember { mutableStateOf<String?>(null) }
-
-    // State untuk AlertDialog
     var showDialog by remember { mutableStateOf(false) }
     var dialogTitle by remember { mutableStateOf("") }
     var dialogMessage by remember { mutableStateOf("") }
@@ -53,15 +51,12 @@ fun RegisterScreen(
     LaunchedEffect(registerState) {
         when (val state = registerState) {
             is UiState.Success -> {
-                // Tampilkan pop-up Sukses
                 dialogTitle = "Pendaftaran Berhasil!"
                 dialogMessage = "Akun Anda telah berhasil dibuat. Silakan masuk untuk memulai."
                 showDialog = true
             }
             is UiState.Error -> {
-                // Tampilkan pop-up Error
                 dialogTitle = "Gagal Mendaftar"
-                // Pesan error sudah diurai di Repository
                 dialogMessage = state.errorMessage
                 showDialog = true
             }
@@ -69,7 +64,6 @@ fun RegisterScreen(
         }
     }
 
-    // AlertDialog Composable
     if (showDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -128,20 +122,15 @@ fun RegisterScreen(
             Text(text = "Buat Akun NalaSaka", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Field Nama Lengkap
             CustomTextField(value = name, onValueChange = { name = it; nameError = null }, label = "Nama Lengkap", isError = nameError != null, errorMessage = nameError)
 
-            // Field Email
             CustomTextField(value = email, onValueChange = { email = it; emailError = null }, label = "Email", keyboardType = KeyboardType.Email, isError = emailError != null, errorMessage = emailError)
 
-            // Field No HP dan Alamat
             CustomTextField(value = phoneNumber, onValueChange = { phoneNumber = it; phoneNumberError = null }, label = "Nomor Handphone", keyboardType = KeyboardType.Phone, isError = phoneNumberError != null, errorMessage = phoneNumberError)
             CustomTextField(value = address, onValueChange = { address = it; addressError = null }, label = "Alamat Lengkap", keyboardType = KeyboardType.Text, isError = addressError != null, errorMessage = addressError)
 
-            // Field Password
             CustomTextField(value = password, onValueChange = { password = it; passwordError = null; confirmPasswordError = null }, label = "Password (min 8 karakter)", keyboardType = KeyboardType.Password, isError = passwordError != null, errorMessage = passwordError)
 
-            // Field Konfirmasi Password
             CustomTextField(value = confirmPassword, onValueChange = { confirmPassword = it; confirmPasswordError = null }, label = "Konfirmasi Password", keyboardType = KeyboardType.Password, isError = confirmPasswordError != null, errorMessage = confirmPasswordError)
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -183,7 +172,6 @@ fun RegisterScreen(
     }
 }
 
-// Fungsi validasi ditempatkan di luar Composable
 private fun validateRegisterInput(
     name: String,
     email: String,

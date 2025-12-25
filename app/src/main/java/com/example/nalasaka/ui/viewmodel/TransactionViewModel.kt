@@ -12,20 +12,16 @@ import kotlinx.coroutines.launch
 
 class TransactionViewModel(private val repository: UserRepository) : ViewModel() {
 
-    // State untuk List Riwayat
     private val _historyState = MutableStateFlow<UiState<List<TransactionItem>>>(UiState.Loading)
     val historyState: StateFlow<UiState<List<TransactionItem>>> = _historyState
 
-    // State untuk Proses Checkout (Loading/Success/Error)
     private val _checkoutState = MutableStateFlow<UiState<String>>(UiState.Loading)
     val checkoutState: StateFlow<UiState<String>> = _checkoutState
 
-    // Fungsi Ambil Riwayat
     fun getHistory() {
         viewModelScope.launch {
             _historyState.value = UiState.Loading
             try {
-                // Ambil data user (token & userId) dari DataStore
                 val user = repository.getUser().first()
                 if (user.token.isNotEmpty()) {
                     val response = repository.getTransactionHistory(user.token, user.userId)
@@ -57,8 +53,7 @@ class TransactionViewModel(private val repository: UserRepository) : ViewModel()
         }
     }
 
-    // Fungsi Checkout / Pesan Ulang
-    fun checkoutItem(sakaId: String, quantity: Int = 1) { // Parameter sakaId, bukan trxId
+    fun checkoutItem(sakaId: String, quantity: Int = 1) {
         viewModelScope.launch {
             _checkoutState.value = UiState.Loading
             try {
@@ -66,7 +61,6 @@ class TransactionViewModel(private val repository: UserRepository) : ViewModel()
                 val response = repository.checkout(user.token, user.userId, sakaId, quantity, "CASH")
                 if (!response.error) {
                     _checkoutState.value = UiState.Success(response.message)
-                    // Refresh history setelah beli
                     getHistory()
                 } else {
                     _checkoutState.value = UiState.Error(response.message)
@@ -77,8 +71,7 @@ class TransactionViewModel(private val repository: UserRepository) : ViewModel()
         }
     }
 
-    // Reset state agar snackbar tidak muncul terus
     fun resetCheckoutState() {
-        _checkoutState.value = UiState.Loading // Atau state Idle buatan sendiri jika mau
+        _checkoutState.value = UiState.Loading
     }
 }

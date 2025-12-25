@@ -15,12 +15,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle // IMPORT INI
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration // IMPORT INI
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp // IMPORT INI
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.nalasaka.R
 import com.example.nalasaka.data.remote.response.SakaItem
@@ -64,7 +64,6 @@ fun ProductGridItem(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Nama Produk
             Text(
                 text = saka.name,
                 style = MaterialTheme.typography.titleSmall,
@@ -73,7 +72,6 @@ fun ProductGridItem(
                 fontWeight = FontWeight.SemiBold
             )
 
-            // Deskripsi Singkat
             Text(
                 text = saka.description.split(".").firstOrNull() ?: "-",
                 style = MaterialTheme.typography.bodySmall,
@@ -84,27 +82,25 @@ fun ProductGridItem(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // --- LOGIKA HARGA CORET DISINI ---
             if (saka.discountPrice != null && saka.discountPrice > 0) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = formatRupiah(saka.discountPrice),
                         style = MaterialTheme.typography.titleSmall,
-                        color = Color.Red, // Warna Merah untuk Promo
+                        color = Color.Red,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = formatRupiah(saka.price),
                         style = TextStyle(
-                            textDecoration = TextDecoration.LineThrough, // EFEK CORET
+                            textDecoration = TextDecoration.LineThrough,
                             color = Color.Gray,
                             fontSize = 10.sp
                         )
                     )
                 }
             } else {
-                // Harga Normal jika tidak ada diskon
                 Text(
                     text = formatRupiah(saka.price),
                     style = MaterialTheme.typography.titleSmall,

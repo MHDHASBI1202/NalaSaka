@@ -66,7 +66,7 @@ class SellerViewModel(private val repository: UserRepository, userPreference: Us
         }
     }
 
-    fun updateStatus(orderId: Int, status: String) { // Ubah nama fungsi agar sesuai dengan UI
+    fun updateStatus(orderId: Int, status: String) {
         viewModelScope.launch {
             _actionState.value = UiState.Loading
             try {
@@ -120,7 +120,6 @@ class SellerViewModel(private val repository: UserRepository, userPreference: Us
         viewModelScope.launch {
             _actionState.value = UiState.Loading
             try {
-                // Memanggil fungsi broadcast di repository yang sudah terhubung ke ApiService
                 repository.broadcastPromo(getToken())
                 _actionState.value = UiState.Success("Promo berhasil disiarkan ke pengikut, Yang Mulia!")
             } catch (e: Exception) {

@@ -19,7 +19,7 @@ import com.example.nalasaka.ui.screen.profile.ProfileScreen
 import com.example.nalasaka.ui.screen.profile.EditProfileScreen
 import com.example.nalasaka.ui.screen.history.TransactionHistoryScreen
 import com.example.nalasaka.ui.screen.profile.VerifySellerScreen
-import com.example.nalasaka.ui.screen.seller.SellerDashboardScreen // Import ini
+import com.example.nalasaka.ui.screen.seller.SellerDashboardScreen
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nalasaka.ui.screen.seller.SellerInventoryScreen
@@ -133,7 +133,6 @@ fun SakaNavigation(
         }
 
         composable(Screen.Cart.route) {
-            // Pastikan import com.example.nalasaka.ui.screen.cart.CartScreen
             com.example.nalasaka.ui.screen.cart.CartScreen(navController = navController)
         }
 

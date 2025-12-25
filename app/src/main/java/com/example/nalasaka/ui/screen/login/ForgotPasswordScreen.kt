@@ -35,7 +35,6 @@ fun ForgotPasswordScreen(
     val forgotState by viewModel.forgotState.collectAsState()
     val resetState by viewModel.resetPassState.collectAsState()
 
-    // Step 1: Input Email -> Step 2: Input Token & New Pass
     var currentStep by remember { mutableIntStateOf(1) }
 
     var email by remember { mutableStateOf("") }
@@ -45,14 +44,11 @@ fun ForgotPasswordScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // State untuk Dialog
     var showTokenSentDialog by remember { mutableStateOf(false) }
     var showResetSuccessDialog by remember { mutableStateOf(false) }
 
-    // Logic saat Request Token (Langkah 1)
     LaunchedEffect(forgotState) {
         if (forgotState is UiState.Success) {
-            // Tampilkan Dialog Token Terkirim
             showTokenSentDialog = true
             viewModel.resetState()
         } else if (forgotState is UiState.Error) {
@@ -61,10 +57,8 @@ fun ForgotPasswordScreen(
         }
     }
 
-    // Logic saat Reset Password (Langkah 2)
     LaunchedEffect(resetState) {
         if (resetState is UiState.Success) {
-            // Tampilkan Dialog Sukses Reset
             showResetSuccessDialog = true
             viewModel.resetState()
         } else if (resetState is UiState.Error) {
@@ -73,7 +67,6 @@ fun ForgotPasswordScreen(
         }
     }
 
-    // --- RENDER DIALOGS ---
 
     if (showTokenSentDialog) {
         CustomSuccessDialog(
@@ -84,7 +77,7 @@ fun ForgotPasswordScreen(
             onDismiss = { showTokenSentDialog = false },
             onConfirm = {
                 showTokenSentDialog = false
-                currentStep = 2 // Pindah ke langkah input token
+                currentStep = 2
             }
         )
     }
@@ -95,15 +88,14 @@ fun ForgotPasswordScreen(
             message = "Password Anda berhasil diperbarui. Silakan login kembali menggunakan password baru.",
             icon = Icons.Default.CheckCircle,
             buttonText = "Ke Halaman Login",
-            onDismiss = { /* Tidak bisa dismiss sembarangan, harus klik tombol */ },
+            onDismiss = { },
             onConfirm = {
                 showResetSuccessDialog = false
-                navController.popBackStack() // Kembali ke Login
+                navController.popBackStack()
             }
         )
     }
 
-    // --- MAIN UI ---
 
     Scaffold(
         topBar = {
@@ -191,7 +183,6 @@ fun ForgotPasswordScreen(
     }
 }
 
-// --- REUSABLE COMPONENT: CUSTOM SUCCESS DIALOG ---
 @Composable
 fun CustomSuccessDialog(
     title: String,
@@ -214,11 +205,10 @@ fun CustomSuccessDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(24.dp)
             ) {
-                // Ikon Besar
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color(0xFF4CAF50), // Hijau Sukses (atau bisa pakai MaterialTheme.colorScheme.primary)
+                    tint = Color(0xFF4CAF50),
                     modifier = Modifier.size(72.dp)
                 )
 

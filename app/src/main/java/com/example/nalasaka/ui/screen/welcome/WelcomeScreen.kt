@@ -1,9 +1,9 @@
 package com.example.nalasaka.ui.screen.welcome
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background // Import ini
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box // Import ini
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,8 +19,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush // Import ini
-import androidx.compose.ui.graphics.Color // Import ini
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -32,8 +32,8 @@ import com.example.nalasaka.di.Injection
 import com.example.nalasaka.ui.components.PrimaryButton
 import com.example.nalasaka.ui.viewmodel.AuthViewModel
 import com.example.nalasaka.ui.navigation.Screen
-import com.example.nalasaka.ui.theme.WelcomeGradientEnd // Import ini
-import com.example.nalasaka.ui.theme.WelcomeGradientStart // Import ini
+import com.example.nalasaka.ui.theme.WelcomeGradientEnd
+import com.example.nalasaka.ui.theme.WelcomeGradientStart
 
 @Composable
 fun WelcomeScreen(
@@ -42,16 +42,13 @@ fun WelcomeScreen(
 ) {
     val context = LocalContext.current
 
-    // 1. Tentukan gradient background
     val gradientBrush = Brush.verticalGradient(
         colors = listOf(WelcomeGradientStart, WelcomeGradientEnd)
     )
 
-    // Ambil sesi user dari repository
     val userFlow = Injection.provideRepository(context).getUser()
     val userModel by userFlow.collectAsState(initial = UserModel("", "", "", false))
 
-    // Periksa status login dan navigasi
     LaunchedEffect(userModel.isLogin) {
         if (userModel.isLogin) {
             navController.navigate(Screen.Home.route) {
@@ -60,11 +57,10 @@ fun WelcomeScreen(
         }
     }
 
-    // Ganti Column luar dengan Box untuk menampung background
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(brush = gradientBrush) // Terapkan Gradient
+            .background(brush = gradientBrush)
     ) {
         Column(
             modifier = Modifier
@@ -73,18 +69,15 @@ fun WelcomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Konten visual (sesuai gambar: Gambar Makanan)
-            // Hamba menggunakan gambar bawaan Android sebagai placeholder untuk mockup Yang Mulia
+
             Image(
-                // Ganti dengan aset gambar yang Yang Mulia gunakan di Launch.png jika sudah ada
-                painter = painterResource(id = R.drawable.iconnala), // Sesuaikan dengan nama file Anda
+                painter = painterResource(id = R.drawable.iconnala),
                 contentDescription = "Logo NalaSaka",
-                modifier = Modifier.size(200.dp) // Ukuran sedikit diperbesar
+                modifier = Modifier.size(200.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Nama Aplikasi (Warna Putih agar kontras)
             Text(
                 text = "NalaSaka",
                 style = MaterialTheme.typography.headlineLarge,
@@ -95,7 +88,6 @@ fun WelcomeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Subtitle (Warna Putih agar kontras)
             Text(
                 text = "Find your fresh food",
                 style = MaterialTheme.typography.titleMedium,
@@ -103,15 +95,8 @@ fun WelcomeScreen(
                 textAlign = TextAlign.Center
             )
 
-            // Pindahkan Tombol ke bagian bawah, atau ubah menjadi Splash/Launch sejati
-            // Untuk Launch Screen yang murni, tombol login/daftar ini harus dihilangkan
-            // dan dipindahkan ke screen berikutnya (Login/Register).
-            // Namun, karena ini masih berfungsi sebagai "Welcome Screen" yang berisi tombol,
-            // kita pindahkan ke bawah agar terpisah dari logo.
+            Spacer(modifier = Modifier.height(80.dp))
 
-            Spacer(modifier = Modifier.height(80.dp)) // Jarak yang lebih jauh
-
-            // Tombol Login (Menggunakan Primary: Burnt Orangeish)
             PrimaryButton(
                 text = "LOGIN",
                 onClick = { navController.navigate(Screen.Login.route) },
@@ -123,13 +108,12 @@ fun WelcomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Tombol Register (Menggunakan Secondary: Deep Moss)
             PrimaryButton(
                 text = "DAFTAR (REGISTER)",
                 onClick = { navController.navigate(Screen.Register.route) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary, // Deep Moss
-                    contentColor = MaterialTheme.colorScheme.onSecondary // Biasanya Putih
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
                 )
             )
         }

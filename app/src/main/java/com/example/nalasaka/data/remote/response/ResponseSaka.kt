@@ -8,8 +8,6 @@ data class ResponseSaka(
 
     @field:SerializedName("message")
     val message: String,
-
-    // Digunakan khusus untuk respons Login
     @field:SerializedName("loginResult")
     val loginResult: LoginResult? = null
 )

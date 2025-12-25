@@ -40,15 +40,11 @@ fun ProductScreen(
 ) {
     val sakaState by viewModel.sakaState.collectAsState()
 
-    // 1. State untuk Filter Kategori
     var selectedCategoryFilter by remember { mutableStateOf("Semua") }
 
-    // 2. State untuk Sortir Harga
-    // Opsi: "Default", "Termurah", "Termahal"
     var selectedSortOption by remember { mutableStateOf("Default") }
     var showSortMenu by remember { mutableStateOf(false) }
 
-    // State untuk Search
     var searchText by remember { mutableStateOf("") }
 
     val userModel by viewModel.repository.getUser().collectAsState(
@@ -63,49 +59,43 @@ fun ProductScreen(
 
     val categories = listOf("Semua", "Sayur", "Buah", "Rempah", "Beras/Biji-bijian", "Lainnya")
 
-    // 3. LOGIKA FILTER & SORTING
     val filteredList = remember(sakaState, selectedCategoryFilter, searchText, selectedSortOption) {
         val list = (sakaState as? UiState.Success<List<SakaItem>>)?.data ?: emptyList()
 
-        // Tahap 1: Filtering (Kategori & Search)
         val filtered = list.filter { item ->
             val isCategoryMatch = if (selectedCategoryFilter == "Semua") true else item.category.equals(selectedCategoryFilter, ignoreCase = true)
             val isSearchMatch = if (searchText.isBlank()) true else item.name.contains(searchText, ignoreCase = true)
             isCategoryMatch && isSearchMatch
         }
 
-        // Tahap 2: Sorting (Harga)
         when (selectedSortOption) {
-            "Termurah" -> filtered.sortedBy { it.price }          // Rendah -> Tinggi (Naik)
-            "Termahal" -> filtered.sortedByDescending { it.price } // Tinggi -> Rendah (Turun)
-            else -> filtered // Default (Terbaru dari DB)
+            "Termurah" -> filtered.sortedBy { it.price }
+            "Termahal" -> filtered.sortedByDescending { it.price }
+            else -> filtered
         }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F0E6))) {
-        // TOP BAR
         ProductTopBar(
             navController = navController,
             searchText = searchText,
             onSearchTextChange = { searchText = it }
         )
 
-        // BARIS FILTER & SORTIR
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // [UPDATE] Tombol Sortir dengan Ikon Dinamis
             Box {
                 val sortIcon = when (selectedSortOption) {
-                    "Termurah" -> Icons.Default.ArrowUpward   // Panah Naik (Kecil ke Besar)
-                    "Termahal" -> Icons.Default.ArrowDownward // Panah Turun (Besar ke Kecil)
-                    else -> Icons.AutoMirrored.Filled.Sort    // Default (Garis Sortir)
+                    "Termurah" -> Icons.Default.ArrowUpward
+                    "Termahal" -> Icons.Default.ArrowDownward
+                    else -> Icons.AutoMirrored.Filled.Sort
                 }
 
-                val sortColor = if (selectedSortOption == "Default") MaterialTheme.colorScheme.primary else Color.Red // Indikator warna jika aktif
+                val sortColor = if (selectedSortOption == "Default") MaterialTheme.colorScheme.primary else Color.Red
 
                 IconButton(
                     onClick = { showSortMenu = true },
@@ -144,7 +134,6 @@ fun ProductScreen(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Chip Kategori (Horizontal Scroll)
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -164,7 +153,6 @@ fun ProductScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // GRID PRODUK
         when (sakaState) {
             UiState.Idle, UiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -228,7 +216,6 @@ fun ProductTopBar(
                 },
                 trailingIcon = {
                     if (searchText.isNotEmpty()) {
-                        // Opsi clear text bisa ditambahkan di sini
                     } else {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
@@ -247,7 +234,6 @@ fun ProductTopBar(
             )
         },
         actions = {
-            // [UPDATE] Navigasi ke Halaman Keranjang
             IconButton(onClick = { navController.navigate(Screen.Cart.route) }) {
                 Icon(Icons.Default.ShoppingCart, contentDescription = "Keranjang")
             }

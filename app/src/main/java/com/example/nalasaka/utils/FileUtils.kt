@@ -13,17 +13,12 @@ private val FILENAME_FORMAT = "yyyyMMdd_HHmmss"
 private val timeStamp: String = SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(Date())
 
 object FileUtils {
-    /**
-     * Membuat file sementara di cache directory
-     */
+
     private fun createCustomTempFile(context: Context): File {
         val filesDir = context.externalCacheDir
         return File.createTempFile(timeStamp, ".jpg", filesDir)
     }
 
-    /**
-     * Mengkonversi Uri (dari Gallery/Camera) menjadi File
-     */
     fun uriToFile(imageUri: Uri, context: Context): File {
         val myFile = createCustomTempFile(context)
         val inputStream = context.contentResolver.openInputStream(imageUri) as InputStream
@@ -35,7 +30,4 @@ object FileUtils {
         inputStream.close()
         return myFile
     }
-
-    // Utilitas lain seperti kompresi gambar dapat ditambahkan di sini,
-    // namun untuk starter project, fokus pada Uri ke File sudah cukup.
 }

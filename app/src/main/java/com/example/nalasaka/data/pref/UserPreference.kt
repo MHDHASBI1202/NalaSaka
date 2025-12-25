@@ -10,19 +10,16 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-// DataStore Delegate untuk akses di seluruh aplikasi
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class UserPreference private constructor(private val dataStore: DataStore<Preferences>) {
 
-    // Kunci untuk DataStore
     private val USER_ID_KEY = stringPreferencesKey("user_id")
     private val NAME_KEY = stringPreferencesKey("name")
     private val TOKEN_KEY = stringPreferencesKey("token")
     private val IS_LOGIN_KEY = booleanPreferencesKey("is_login")
-    private val ROLE_KEY = stringPreferencesKey("role") // NEW: Kunci untuk Role
+    private val ROLE_KEY = stringPreferencesKey("role")
 
-    // Mendapatkan model user sebagai Flow
     fun getUser(): Flow<UserModel> {
         return dataStore.data.map { preferences ->
             UserModel(
@@ -30,30 +27,28 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
                 preferences[NAME_KEY] ?: "",
                 preferences[TOKEN_KEY] ?: "",
                 preferences[IS_LOGIN_KEY] ?: false,
-                preferences[ROLE_KEY] ?: "customer" // NEW: Ambil nilai role, default 'customer'
+                preferences[ROLE_KEY] ?: "customer"
             )
         }
     }
 
-    // Menyimpan sesi User (Login)
     suspend fun saveUser(user: UserModel) {
         dataStore.edit { preferences ->
             preferences[USER_ID_KEY] = user.userId
             preferences[NAME_KEY] = user.name
             preferences[TOKEN_KEY] = user.token
-            preferences[IS_LOGIN_KEY] = true // Set isLogin ke true
-            preferences[ROLE_KEY] = user.role // NEW: Simpan role
+            preferences[IS_LOGIN_KEY] = true
+            preferences[ROLE_KEY] = user.role
         }
     }
 
-    // Logout / Menghapus sesi
     suspend fun logout() {
         dataStore.edit { preferences ->
             preferences[USER_ID_KEY] = ""
             preferences[NAME_KEY] = ""
             preferences[TOKEN_KEY] = ""
-            preferences[IS_LOGIN_KEY] = false // Set isLogin ke false
-            preferences[ROLE_KEY] = "customer" // NEW: Reset role ke default
+            preferences[IS_LOGIN_KEY] = false
+            preferences[ROLE_KEY] = "customer"
         }
     }
 

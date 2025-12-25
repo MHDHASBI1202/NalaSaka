@@ -255,7 +255,6 @@
                             Text("KONFIRMASI BARANG SAMPAI")
                         }
                     } else if (item.status == "SELESAI" || item.status == "BATAL" || item.status == "DIPROSES") {
-                        // Selain itu tampilkan pesan ulang atau info resi
                         if (item.status != "DIPROSES") {
                             Button(onClick = { onReorder(item.sakaId) }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(Icons.Default.Refresh, null)

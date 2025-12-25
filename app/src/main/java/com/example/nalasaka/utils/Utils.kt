@@ -9,11 +9,7 @@ object Utils {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
-    // Placeholder untuk Validasi Data (misalnya Validasi NIK, Sertifikasi Petani)
     fun isValidCertificationId(id: String): Boolean {
-        // Implementasi logika validasi sertifikasi petani di sini
-        return id.length == 10 // Contoh validasi placeholder
+        return id.length == 10
     }
-
-    // Utilitas lain yang umum dapat ditambahkan di sini.
 }

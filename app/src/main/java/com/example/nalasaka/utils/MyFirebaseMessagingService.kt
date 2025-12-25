@@ -17,9 +17,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
-        // Token baru didapat, kirim ke server melalui API
-        // Yang Mulia bisa menyimpan ini di DataStore sementara
-        // lalu kirim saat user sudah login
     }
 
     private fun showNotification(title: String?, message: String?) {
@@ -32,7 +29,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.iconnala) // Pastikan icon ada
+            .setSmallIcon(R.drawable.iconnala)
             .setContentTitle(title)
             .setContentText(message)
             .setAutoCancel(true)

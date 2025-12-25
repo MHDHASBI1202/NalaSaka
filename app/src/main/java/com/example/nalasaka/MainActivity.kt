@@ -16,13 +16,13 @@ import com.example.nalasaka.ui.theme.NalaSakaTheme
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState // Import ini
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.nalasaka.ui.components.SakaBottomBar
 import com.example.nalasaka.ui.navigation.Screen
-import com.example.nalasaka.di.Injection // Import ini
+import com.example.nalasaka.di.Injection
 import com.google.firebase.messaging.FirebaseMessaging
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -36,18 +36,15 @@ class MainActivity : ComponentActivity() {
             val repository = Injection.provideRepository(context)
             val userModel by repository.getUser().collectAsState(initial = null)
 
-            // TRIGGER: Ambil token FCM jika user sudah login
                 LaunchedEffect(userModel?.isLogin) {
                 if (userModel?.isLogin == true) {
                     FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                         if (task.isSuccessful) {
                             val token = task.result
-                            // Kirim token ke backend
                             lifecycleScope.launch {
                                 try {
                                     repository.updateFcmToken(userModel!!.token, token)
                                 } catch (e: Exception) {
-                                    // Log error jika gagal update token
                                 }
                             }
                         }
@@ -73,31 +70,26 @@ fun NalaSakaApp() {
     val viewModelFactory = ViewModelFactory.getInstance(context)
     val repository = Injection.provideRepository(context)
 
-    // --- LOGIKA UTAMA: Ambil Role User secara Real-time ---
     val userModel by repository.getUser().collectAsState(
         initial = com.example.nalasaka.data.pref.UserModel("", "", "", false)
     )
     val userRole = userModel.role
-    // -----------------------------------------------------
 
-    // Tentukan apakah BottomBar harus ditampilkan
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Tambahkan Screen.SellerDashboard.route ke dalam list showBottomBar
     val showBottomBar = currentRoute in listOf(
         Screen.Home.route,
         Screen.Profile.route,
         Screen.Produk.route,
         Screen.TransactionHistory.route,
-        Screen.SellerDashboard.route // Bottom bar muncul di dashboard seller
+        Screen.SellerDashboard.route
     )
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showBottomBar) {
-                // Pass userRole ke BottomBar
                 SakaBottomBar(navController = navController, userRole = userRole)
             }
         }

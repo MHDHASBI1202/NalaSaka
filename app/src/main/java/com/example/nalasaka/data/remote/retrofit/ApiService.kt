@@ -77,7 +77,6 @@ interface ApiService {
         @Path("id") id: String
     ): ResponseSaka
 
-    // --- MODUL TRANSAKSI & LOGISTIK ---
 
     @GET("transactions")
     suspend fun getTransactionHistory(
@@ -108,10 +107,9 @@ interface ApiService {
         @Field("user_id") userId: String,
         @Field("saka_id") sakaId: String,
         @Field("quantity") quantity: Int,
-        @Field("payment_method") paymentMethod: String // Tambah ini
+        @Field("payment_method") paymentMethod: String
     ): CheckoutResponse
 
-    // --- MODUL PROFIL ---
     @GET("user/profile")
     suspend fun getUserProfile(
         @Header("Authorization") token: String
@@ -151,16 +149,13 @@ interface ApiService {
         @Header("Authorization") token: String
     ): SellerStatsResponse
 
-    // --- MODUL REPUTASI & ANALISIS (NEW) ---
-
-    // 1. Ambil Review berdasarkan Produk
     @GET("saka/{sakaId}/reviews")
     suspend fun getProductReviews(
         @Header("Authorization") token: String,
         @Path("sakaId") sakaId: String
     ): ReviewApiResponse
 
-    // 2. Kirim Review Baru (Dengan Foto Opsional)
+
     @Multipart
     @POST("reviews")
     suspend fun addReview(
@@ -168,10 +163,9 @@ interface ApiService {
         @Part("saka_id") sakaId: RequestBody,
         @Part("rating") rating: RequestBody,
         @Part("comment") comment: RequestBody,
-        @Part file: MultipartBody.Part? = null // Foto opsional
-    ): ResponseSaka // Kita pakai ResponseSaka umum karena format suksesnya mirip
+        @Part file: MultipartBody.Part? = null
+    ): ResponseSaka
 
-    // --- MODUL WISHLIST ---
     @FormUrlEncoded
     @POST("wishlist/toggle")
     suspend fun toggleWishlist(
@@ -190,7 +184,6 @@ interface ApiService {
         @Header("Authorization") token: String
     ): AllSakaResponse
 
-    // --- CART ---
     @GET("cart")
     suspend fun getCart(@Header("Authorization") token: String): CartResponse
 
@@ -220,17 +213,15 @@ interface ApiService {
     @POST("cart/checkout")
     suspend fun checkoutCart(
         @Header("Authorization") token: String,
-        @Field("payment_method") paymentMethod: String // Tambah ini
+        @Field("payment_method") paymentMethod: String
     ): ResponseSaka
 
-    // 1. Forgot Password (Request Token)
     @FormUrlEncoded
     @POST("password/forgot")
     suspend fun forgotPassword(
         @Field("email") email: String
     ): ResponseSaka
 
-    // 2. Reset Password (Pakai Token)
     @FormUrlEncoded
     @POST("password/reset")
     suspend fun resetPassword(
@@ -240,7 +231,6 @@ interface ApiService {
         @Field("password_confirmation") passwordConfirmation: String
     ): ResponseSaka
 
-    // 3. Change Password (Di Profil)
     @FormUrlEncoded
     @POST("user/change-password")
     suspend fun changePassword(
@@ -260,7 +250,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("store/location")
     suspend fun updateStoreLocation(
-        @Header("Authorization") token: String, // Tambahkan token
+        @Header("Authorization") token: String,
         @Field("address") address: String,
         @Field("latitude") latitude: Double,
         @Field("longitude") longitude: Double
@@ -268,7 +258,7 @@ interface ApiService {
 
     @GET("seller/orders")
     suspend fun getSellerOrders(
-        @Header("Authorization") token: String // Tambahkan token
+        @Header("Authorization") token: String
     ): List<OrderItem>
 
     @FormUrlEncoded

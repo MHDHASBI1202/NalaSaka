@@ -35,43 +35,36 @@ fun VerifySellerScreen(
 
     val profile = (profileState as? UiState.Success)?.data
 
-    // State lokal untuk Nama Toko dan persetujuan
     var storeName by rememberSaveable { mutableStateOf("") }
     var isConfirmed by rememberSaveable { mutableStateOf(false) }
 
-    // State untuk kontrol Dialog Sukses
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // --- LOGIKA UTAMA: Handle State Aktivasi ---
     LaunchedEffect(activationState) {
         when (val state = activationState) {
             is UiState.Success -> {
-                // Jika sukses, tampilkan Dialog pilihan navigasi
                 showSuccessDialog = true
             }
             is UiState.Error -> {
                 snackbarHostState.showSnackbar("Gagal aktivasi penjual: ${state.errorMessage}")
                 viewModel.resetSellerActivationState()
             }
-            else -> { /* Do nothing */ }
+            else -> {  }
         }
     }
 
-    // --- POP-UP DIALOG SUKSES & NAVIGASI ---
     if (showSuccessDialog) {
         val createdStoreName = (activationState as? UiState.Success)?.data?.storeName ?: ""
 
         AlertDialog(
             onDismissRequest = {
-                // Jika dialog ditutup paksa (klik luar), arahkan ke Profil sebagai default
                 viewModel.resetSellerActivationState()
                 showSuccessDialog = false
                 navController.navigate(Screen.Profile.route) {
-                    // Tutup halaman verifikasi dengan membersihkan stack sampai ke Home
                     popUpTo(Screen.Home.route) {
-                        saveState = false // Jangan simpan state halaman verifikasi
+                        saveState = false
                     }
                     launchSingleTop = true
                 }
@@ -81,15 +74,13 @@ fun VerifySellerScreen(
                 Text("Selamat! Toko \"$createdStoreName\" berhasil dibuat. Anda kini resmi menjadi Penjual. Mau ke mana sekarang?")
             },
             confirmButton = {
-                // Pilihan 1: Langsung ke Dashboard Seller (Toko)
                 Button(
                     onClick = {
                         viewModel.resetSellerActivationState()
                         showSuccessDialog = false
                         navController.navigate(Screen.SellerDashboard.route) {
-                            // Tutup halaman verifikasi dari back stack
                             popUpTo(Screen.Home.route) {
-                                saveState = false // Hancurkan halaman verifikasi
+                                saveState = false
                             }
                             launchSingleTop = true
                         }
@@ -100,15 +91,13 @@ fun VerifySellerScreen(
                 }
             },
             dismissButton = {
-                // Pilihan 2: Kembali ke Profil (untuk lihat status seller di profil)
                 TextButton(
                     onClick = {
                         viewModel.resetSellerActivationState()
                         showSuccessDialog = false
                         navController.navigate(Screen.Profile.route) {
-                            // Tutup halaman verifikasi dari back stack
                             popUpTo(Screen.Home.route) {
-                                saveState = false // Hancurkan halaman verifikasi
+                                saveState = false
                             }
                             launchSingleTop = true
                         }
@@ -160,7 +149,6 @@ fun VerifySellerScreen(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    // DETAIL DATA USER UNTUK VERIFIKASI
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         shape = RoundedCornerShape(12.dp),
@@ -177,7 +165,6 @@ fun VerifySellerScreen(
                         }
                     }
 
-                    // OPSI EDIT
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -207,7 +194,6 @@ fun VerifySellerScreen(
                         color = Color.LightGray.copy(alpha = 0.5f)
                     )
 
-                    // INPUT NAMA TOKO
                     CustomTextField(
                         value = storeName,
                         onValueChange = { storeName = it },
@@ -216,7 +202,6 @@ fun VerifySellerScreen(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
                     )
 
-                    // CHECKBOX KONFIRMASI
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -232,7 +217,6 @@ fun VerifySellerScreen(
                         )
                     }
 
-                    // TOMBOL AKTIVASI
                     PrimaryButton(
                         text = if (isActivating) "Mengaktifkan..." else "AKTIFKAN MODE PENJUAL",
                         onClick = {

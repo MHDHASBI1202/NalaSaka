@@ -18,7 +18,7 @@ import com.example.nalasaka.ui.theme.LightPrimary
 import com.example.nalasaka.ui.theme.LightSecondary
 import com.example.nalasaka.ui.theme.Pink40
 import com.example.nalasaka.ui.theme.Pink80
-import com.example.nalasaka.ui.theme.Typography // Dari Type.kt
+import com.example.nalasaka.ui.theme.Typography
 
 
 private val DarkColorScheme = darkColorScheme(

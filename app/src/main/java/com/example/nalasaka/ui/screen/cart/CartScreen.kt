@@ -3,23 +3,23 @@ package com.example.nalasaka.ui.screen.cart
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape // Import Shape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.CheckCircle // Import Icon Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight // Import Font Weight
-import androidx.compose.ui.text.style.TextAlign // Import Text Align
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog // Import Dialog
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -43,7 +43,6 @@ fun CartScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
 
-    // [BARU] State untuk Pop-up Sukses Checkout
     var showCheckoutSuccessDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -52,7 +51,6 @@ fun CartScreen(
 
     LaunchedEffect(checkoutState) {
         if (checkoutState is UiState.Success) {
-            // [UPDATE] Jangan navigasi langsung, tapi tampilkan dialog
             showCheckoutSuccessDialog = true
             viewModel.resetCheckoutState()
         } else if (checkoutState is UiState.Error) {
@@ -61,15 +59,12 @@ fun CartScreen(
         }
     }
 
-    // [BARU] Render Custom Dialog Checkout Sukses
     if (showCheckoutSuccessDialog) {
         CheckoutSuccessDialog(
             onDismiss = {
-                // Jika tutup, user tetap di halaman Cart (yang sekarang kosong)
                 showCheckoutSuccessDialog = false
             },
             onGoToOrders = {
-                // Jika pilih "Lihat Pesanan", navigasi ke history
                 showCheckoutSuccessDialog = false
                 navController.navigate(Screen.TransactionHistory.route)
             }
@@ -106,7 +101,6 @@ fun CartScreen(
                             }
                             Button(
                                 onClick = {
-                                    // Pastikan rute ini SAMA PERSIS dengan yang didaftarkan di SakaNavigation
                                     navController.navigate("checkout/$total")
                                 },
                                 shape = RoundedCornerShape(8.dp)
@@ -168,7 +162,6 @@ fun CartItemCard(item: CartItem, onAdd: () -> Unit, onMin: () -> Unit) {
     }
 }
 
-// [BARU] Composable Dialog Sukses Checkout
 @Composable
 fun CheckoutSuccessDialog(
     onDismiss: () -> Unit,
@@ -187,11 +180,10 @@ fun CheckoutSuccessDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(24.dp)
             ) {
-                // Ikon Centang Besar
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = Color(0xFF4CAF50), // Hijau Sukses
+                    tint = Color(0xFF4CAF50),
                     modifier = Modifier.size(72.dp)
                 )
 
@@ -219,7 +211,6 @@ fun CheckoutSuccessDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Tombol Tutup (Tetap di halaman ini)
                     OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
@@ -228,7 +219,6 @@ fun CheckoutSuccessDialog(
                         Text("Tutup", color = MaterialTheme.colorScheme.primary)
                     }
 
-                    // Tombol Ke Riwayat Pesanan
                     Button(
                         onClick = onGoToOrders,
                         modifier = Modifier.weight(1f),

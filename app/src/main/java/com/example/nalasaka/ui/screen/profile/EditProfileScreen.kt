@@ -4,12 +4,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-// Perbaikan: Menggunakan ikon AutoMirrored untuk ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable // Import yang diperlukan
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,7 +19,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.nalasaka.data.remote.response.ProfileData
 import com.example.nalasaka.ui.components.PrimaryButton
-// Perbaikan: Mengubah NalaSakaTextField menjadi CustomTextField
 import com.example.nalasaka.ui.components.CustomTextField
 import com.example.nalasaka.ui.viewmodel.ProfileViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
@@ -40,7 +38,7 @@ fun EditProfileScreen(
     var name by rememberSaveable { mutableStateOf(profile.name) }
     var phoneNumber by rememberSaveable { mutableStateOf(profile.phoneNumber ?: "") }
     var address by rememberSaveable { mutableStateOf(profile.address ?: "") }
-    var storeName by rememberSaveable { mutableStateOf(profile.storeName ?: "") } // NEW: State Nama Toko
+    var storeName by rememberSaveable { mutableStateOf(profile.storeName ?: "") }
 
 
     LaunchedEffect(profile) {
@@ -48,7 +46,7 @@ fun EditProfileScreen(
             name = profile.name
             phoneNumber = profile.phoneNumber ?: ""
             address = profile.address ?: ""
-            storeName = profile.storeName ?: "" // NEW: Sinkronisasi store name
+            storeName = profile.storeName ?: ""
         }
     }
 
@@ -65,12 +63,12 @@ fun EditProfileScreen(
                 snackbarHostState.showSnackbar("Gagal: ${state.errorMessage}")
                 viewModel.resetUpdateState()
             }
-            else -> { /* Do nothing */ }
+            else -> {  }
         }
     }
 
     val isSaving = updateState is UiState.Loading
-    val isSeller = profile.role == "seller" // NEW: Deteksi role
+    val isSeller = profile.role == "seller"
 
     Scaffold(
         topBar = {
@@ -104,7 +102,6 @@ fun EditProfileScreen(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    // NEW: Field Nama Toko jika user adalah seller
                     if (isSeller) {
                         Text(
                             text = "Informasi Penjual",
@@ -132,7 +129,6 @@ fun EditProfileScreen(
                         )
                     }
 
-                    // Input Nama
                     CustomTextField(
                         value = name,
                         onValueChange = { name = it },
@@ -141,7 +137,6 @@ fun EditProfileScreen(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                     )
 
-                    // Input Email (Tidak dapat diubah)
                     OutlinedTextField(
                         value = profile.email,
                         onValueChange = { },
@@ -155,7 +150,6 @@ fun EditProfileScreen(
                         )
                     )
 
-                    // Input Nomor HP
                     CustomTextField(
                         value = phoneNumber,
                         onValueChange = { phoneNumber = it },
@@ -165,7 +159,6 @@ fun EditProfileScreen(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                     )
 
-                    // Input Alamat
                     CustomTextField(
                         value = address,
                         onValueChange = { address = it },
@@ -175,12 +168,9 @@ fun EditProfileScreen(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
                     )
 
-
-                    // Tombol Simpan
                     PrimaryButton(
                         text = if (isSaving) "Menyimpan..." else "SIMPAN PERUBAHAN",
                         onClick = {
-                            // Kirim storeName jika user adalah seller
                             viewModel.updateProfile(name, phoneNumber, address, if (isSeller) storeName else null)
                         },
                         enabled = !isSaving,

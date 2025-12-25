@@ -24,11 +24,9 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
     private val _updateState = MutableStateFlow<UiState<ProfileData>>(UiState.Idle)
     val updateState: StateFlow<UiState<ProfileData>> = _updateState.asStateFlow()
 
-    // State untuk memantau proses aktivasi seller
     private val _sellerActivationState = MutableStateFlow<UiState<ProfileData>>(UiState.Idle)
     val sellerActivationState: StateFlow<UiState<ProfileData>> = _sellerActivationState.asStateFlow()
 
-    // State untuk Upload Sertifikasi
     private val _uploadCertState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val uploadCertState: StateFlow<UiState<String>> = _uploadCertState.asStateFlow()
 
@@ -38,7 +36,6 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
 
     fun loadUserProfile() {
         viewModelScope.launch {
-            // Jangan set Loading jika data sudah ada agar tidak flickering saat kembali
             if (_profileState.value is UiState.Idle || _profileState.value is UiState.Error) {
                 _profileState.value = UiState.Loading
             }
@@ -71,7 +68,6 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
                     if (!response.error) {
                         _updateState.value = UiState.Success(response.user)
                         _profileState.value = UiState.Success(response.user)
-                        // Update nama di lokal agar sinkron
                         repository.saveUser(user.copy(name = response.user.name))
                     } else {
                         _updateState.value = UiState.Error(response.message)
@@ -114,7 +110,6 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    // [FUNGSI YANG DIPERBAIKI]
     fun uploadCertification(file: File) {
         viewModelScope.launch {
             _uploadCertState.value = UiState.Loading
@@ -129,8 +124,6 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
                     if (!response.error) {
                         _uploadCertState.value = UiState.Success("Verifikasi berhasil diajukan!")
 
-                        // [CRITICAL FIX] Update profileState secara manual dengan data terbaru dari API Upload
-                        // Ini yang membuat halaman Profil langsung berubah tanpa perlu loading ulang
                         _profileState.value = UiState.Success(response.user)
 
                     } else {
@@ -190,14 +183,13 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
             try {
                 val user = repository.getUser().first()
 
-                // Konversi file ke MultipartBody
                 val requestImageFile = okhttp3.RequestBody.create("image/jpeg".toMediaTypeOrNull(), file)
                 val imageMultipart = MultipartBody.Part.createFormData("photo", file.name, requestImageFile)
 
                 val response = repository.updateProfilePhoto(user.token, imageMultipart)
                 if (!response.error) {
                     _uploadPhotoState.value = UiState.Success("Foto profil berhasil diperbarui!")
-                    loadUserProfile() // Refresh data profil agar foto langsung berubah
+                    loadUserProfile()
                 } else {
                     _uploadPhotoState.value = UiState.Error(response.message)
                 }
@@ -207,7 +199,6 @@ class ProfileViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    // Tambahkan fungsi ini untuk menghilangkan error resetUploadPhotoState
     fun resetUploadPhotoState() {
         _uploadPhotoState.value = UiState.Idle
     }

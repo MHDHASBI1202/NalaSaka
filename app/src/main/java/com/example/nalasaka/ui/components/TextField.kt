@@ -28,15 +28,13 @@ fun CustomTextField(
     keyboardType: KeyboardType = KeyboardType.Text,
     isError: Boolean = false,
     errorMessage: String? = null,
-    // Menambahkan parameter placeholder
     placeholder: String? = null,
-    maxLines: Int = 1 // Default 1 baris
+    maxLines: Int = 1
 ) {
     val isPasswordField = keyboardType == KeyboardType.Password
 
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // Tentukan VisualTransformation
     val visualTransformation = if (isPasswordField) {
         if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()
     } else {
@@ -47,7 +45,6 @@ fun CustomTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
-        // Menggunakan placeholder di OutlinedTextField
         placeholder = if (placeholder != null) { { Text(placeholder) } } else null,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         visualTransformation = visualTransformation,

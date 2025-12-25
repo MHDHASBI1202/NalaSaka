@@ -47,7 +47,6 @@ fun AddSakaScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    // State Input
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -55,17 +54,14 @@ fun AddSakaScreen(
     var discountPriceText by remember { mutableStateOf("") } // NEW: State Diskon
     var stockText by remember { mutableStateOf("") }
 
-    // State Kategori
     val categories = listOf("Sayur", "Buah", "Rempah", "Beras/Biji-bijian", "Lainnya")
     var expandedCategory by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf(categories[0]) }
 
-    // Errors
     var nameError by remember { mutableStateOf<String?>(null) }
     var priceError by remember { mutableStateOf<String?>(null) }
     var imageError by remember { mutableStateOf<String?>(null) }
 
-    // Dialog Gambar
     var showImageSourceDialog by remember { mutableStateOf(false) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
     var showSuccessDialog by remember { mutableStateOf(false) }
@@ -257,7 +253,6 @@ fun AddSakaScreen(
                 }
             }
 
-            // --- HARGA & STOK ---
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 CustomTextField(
                     value = priceText,
@@ -278,7 +273,6 @@ fun AddSakaScreen(
                 )
             }
 
-            // --- INPUT DISKON (NEW) ---
             CustomTextField(
                 value = discountPriceText,
                 onValueChange = { discountPriceText = it },
@@ -302,7 +296,7 @@ fun AddSakaScreen(
                 text = "UNGGAH PRODUK",
                 onClick = {
                     val priceInt = priceText.toIntOrNull() ?: 0
-                    val discountInt = discountPriceText.toIntOrNull() // Bisa null
+                    val discountInt = discountPriceText.toIntOrNull()
                     val stockInt = stockText.toIntOrNull() ?: 0
 
                     if (selectedImageUri != null && name.isNotBlank() && priceInt > 0) {

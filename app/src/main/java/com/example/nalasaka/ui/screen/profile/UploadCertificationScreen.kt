@@ -49,15 +49,12 @@ fun UploadCertificationScreen(
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Variabel penampung sementara untuk URI kamera
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
     var showImageSourceDialog by remember { mutableStateOf(false) }
 
-    // State untuk menampilkan Dialog Sukses
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // Launchers
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? -> if (uri != null) selectedImageUri = uri }
@@ -65,7 +62,6 @@ fun UploadCertificationScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
-        // [FIX SMART CAST] Gunakan variabel lokal atau pengecekan null yang aman
         if (success && tempCameraUri != null) {
             selectedImageUri = tempCameraUri
         }
@@ -82,11 +78,9 @@ fun UploadCertificationScreen(
         }
     }
 
-    // Effect untuk memantau status upload
     LaunchedEffect(uploadState) {
         when (val state = uploadState) {
             is UiState.Success -> {
-                // Munculkan Pop-up, JANGAN langsung close screen
                 showSuccessDialog = true
             }
             is UiState.Error -> {
@@ -97,11 +91,9 @@ fun UploadCertificationScreen(
         }
     }
 
-    // [FITUR BARU] Pop-up Sukses
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = {
-                // Opsional: disable dismiss on click outside agar user harus klik OK
             },
             title = { Text("Berhasil!") },
             text = { Text("Dokumen sertifikasi berhasil diunggah. Akun Anda kini Terverifikasi.") },
@@ -110,7 +102,6 @@ fun UploadCertificationScreen(
                     onClick = {
                         showSuccessDialog = false
                         viewModel.resetUploadCertState()
-                        // Tutup halaman ini dan kembali ke Profil agar data ter-refresh
                         navController.popBackStack()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -139,7 +130,6 @@ fun UploadCertificationScreen(
                         val photoFile = File(context.cacheDir, "cert_${System.currentTimeMillis()}.jpg")
                         val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", photoFile)
 
-                        // Simpan ke temp variable
                         tempCameraUri = uri
                         cameraLauncher.launch(uri)
                     } else {
@@ -185,7 +175,6 @@ fun UploadCertificationScreen(
                 modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
             )
 
-            // Area Upload
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

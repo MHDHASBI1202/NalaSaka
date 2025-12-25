@@ -32,7 +32,6 @@ fun SakaItem(
             modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Foto Barang (Implementasi Upload Foto Barang)
             AsyncImage(
                 model = saka.photoUrl,
                 contentDescription = saka.name,
@@ -47,21 +46,20 @@ fun SakaItem(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Nama Produk
                 Text(
                     text = saka.name,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                // Harga Produk
+
                 Text(
                     text = formatRupiah(saka.price),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                // Deskripsi Singkat
+
                 Text(
                     text = saka.description,
                     style = MaterialTheme.typography.bodySmall,

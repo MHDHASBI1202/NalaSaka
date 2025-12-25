@@ -286,10 +286,8 @@ fun SellerDashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Di dalam SellerDashboardScreen.kt, cari bagian "Menu Kelola"
             Text(text = "Menu Kelola", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
 
-// Baris Pertama Menu
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 SellerMenuCard(
                     title = "Upload Barang",

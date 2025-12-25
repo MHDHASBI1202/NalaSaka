@@ -254,14 +254,12 @@ fun ProfileHeader(
     var showSourceDialog by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Launcher Galeri
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { onUploadPhoto(FileUtils.uriToFile(it, context)) }
     }
 
-    // Launcher Kamera
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
@@ -270,7 +268,6 @@ fun ProfileHeader(
         }
     }
 
-    // Dialog Pilihan Sumber
     if (showSourceDialog) {
         AlertDialog(
             onDismissRequest = { showSourceDialog = false },

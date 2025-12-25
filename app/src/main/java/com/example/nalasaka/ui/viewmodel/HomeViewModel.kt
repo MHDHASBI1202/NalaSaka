@@ -16,7 +16,6 @@ class HomeViewModel(val repository: UserRepository) : ViewModel() {
     val sakaState: StateFlow<UiState<List<SakaItem>>> = _sakaState.asStateFlow()
 
     init {
-        // Cek sesi dan muat data saat pertama kali ViewModel dibuat
         checkSessionAndLoadSaka()
     }
 
@@ -26,7 +25,6 @@ class HomeViewModel(val repository: UserRepository) : ViewModel() {
             if (user.isLogin) {
                 loadSaka(user.token)
             } else {
-                // Jika belum login, biarkan state Idle atau berikan notifikasi
                 _sakaState.value = UiState.Error("User not logged in. Redirecting...")
             }
         }

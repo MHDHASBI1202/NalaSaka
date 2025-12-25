@@ -35,7 +35,6 @@ fun LoginScreen(
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
 
-    // State untuk AlertDialog
     var showDialog by remember { mutableStateOf(false) }
     var dialogTitle by remember { mutableStateOf("") }
     var dialogMessage by remember { mutableStateOf("") }
@@ -43,15 +42,12 @@ fun LoginScreen(
     LaunchedEffect(loginState) {
         when (val state = loginState) {
             is UiState.Success -> {
-                // Navigasi ke Home
                 navController.navigate(Screen.Home.route) {
                     popUpTo(Screen.Welcome.route) { inclusive = true }
                 }
             }
             is UiState.Error -> {
-                // Tampilkan pop-up Error
                 dialogTitle = "Gagal Login"
-                // Pesan error sudah diurai di Repository
                 dialogMessage = state.errorMessage
                 showDialog = true
             }
@@ -59,7 +55,6 @@ fun LoginScreen(
         }
     }
 
-    // AlertDialog Composable
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -73,7 +68,6 @@ fun LoginScreen(
                 Column {
                     Text(dialogMessage)
                     Spacer(modifier = Modifier.height(8.dp))
-                    // Tambahkan CTA Register jika error terkait kredensial salah (karena akun bisa jadi belum terdaftar)
                     if (dialogMessage.contains("Email atau Password yang Anda masukkan salah")) {
                         TextButton(onClick = {
                             showDialog = false
@@ -125,7 +119,6 @@ fun LoginScreen(
             CustomTextField(value = email, onValueChange = { email = it; emailError = null }, label = "Email", keyboardType = KeyboardType.Email, isError = emailError != null, errorMessage = emailError)
             CustomTextField(value = password, onValueChange = { password = it; passwordError = null }, label = "Password (min 8 karakter)", keyboardType = KeyboardType.Password, isError = passwordError != null, errorMessage = passwordError)
 
-            // [TAMBAHAN] Tombol Lupa Password
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = { navController.navigate(Screen.ForgotPassword.route) }) {
                     Text("Lupa Password?", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)

@@ -121,19 +121,15 @@ fun DetailScreen(
     val submitReviewState by viewModel.submitReviewState.collectAsState()
     val addToCartState by cartViewModel.addToCartState.collectAsState()
 
-    // State Follow dari ViewModel
     val isFollowing by viewModel.isFollowing.collectAsState()
 
-    // Collect state wishlist
     val isWishlist by viewModel.isWishlist.collectAsState()
 
-    // Ambil data User Login
     val userSession by authViewModel.userSession.collectAsState(initial = com.example.nalasaka.data.pref.UserModel("","","",false))
     val currentUserId = userSession.userId
 
     var showReviewDialog by remember { mutableStateOf(false) }
 
-    // State untuk menampilkan Pop-up Sukses Keranjang
     var showAddToCartSuccessDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -154,7 +150,6 @@ fun DetailScreen(
         viewModel.loadSakaDetail(sakaId)
     }
 
-    // Effect untuk mengecek status Follow saat data produk berhasil dimuat
     LaunchedEffect(sakaDetailState) {
         if (sakaDetailState is UiState.Success) {
             val sellerId = (sakaDetailState as UiState.Success).data.sellerId
@@ -182,16 +177,13 @@ fun DetailScreen(
         }
     }
 
-    // Effect untuk Add To Cart -> Munculkan Dialog
     LaunchedEffect(addToCartState) {
         when (val state = addToCartState) {
             is UiState.Success -> {
-                // Tampilkan Custom Dialog
                 showAddToCartSuccessDialog = true
                 cartViewModel.resetAddToCartState()
             }
             is UiState.Error -> {
-                // Jika error, pakai Snackbar
                 snackbarHostState.showSnackbar(state.errorMessage)
                 cartViewModel.resetAddToCartState()
             }
@@ -199,7 +191,6 @@ fun DetailScreen(
         }
     }
 
-    // Render Custom Dialog Add to Cart jika state true
     if (showAddToCartSuccessDialog) {
         AddToCartSuccessDialog(
             onDismiss = { showAddToCartSuccessDialog = false },
@@ -314,7 +305,6 @@ fun DetailScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Gambar Produk
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -330,7 +320,6 @@ fun DetailScreen(
                         )
                     }
 
-                    // Detail Teks
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -345,7 +334,6 @@ fun DetailScreen(
                             )
                         )
 
-                        // NAMA PRODUK (Tombol Follow DIHAPUS dari sini)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = saka.name,
@@ -354,7 +342,6 @@ fun DetailScreen(
                                     color = Color.Black
                                 )
                             )
-                            // Jika ingin badge verified produk tetap di sini, uncomment ini:
                              if (saka.isSellerVerified) {
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
@@ -380,12 +367,11 @@ fun DetailScreen(
                         }
                     }
 
-                    // --- KARTU INFORMASI PENJUAL (BARU) ---
                     Spacer(modifier = Modifier.height(8.dp))
 
                     SellerInfoCard(
-                        sellerName = saka.sellerName, // Pastikan field ini ada di ResponseSaka
-                        sellerPhotoUrl = saka.sellerPhotoUrl, // Pastikan field ini ada di ResponseSaka
+                        sellerName = saka.sellerName,
+                        sellerPhotoUrl = saka.sellerPhotoUrl,
                         isVerified = saka.isSellerVerified,
                         isFollowing = isFollowing,
                         isSelf = saka.sellerId == currentUserId,
@@ -394,7 +380,6 @@ fun DetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // DESKRIPSI
                     Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                         Text(
                             text = "Deskripsi Produk",
@@ -412,7 +397,6 @@ fun DetailScreen(
 
                     HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 24.dp))
 
-                    // Bagian Ulasan
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -451,7 +435,6 @@ fun DetailScreen(
 
                     HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp)
 
-                    // Produk Serupa
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -488,7 +471,6 @@ fun DetailScreen(
     }
 }
 
-// [BARU] Composable Custom Dialog Sukses Masuk Keranjang
 @Composable
 fun AddToCartSuccessDialog(
     onDismiss: () -> Unit,
@@ -507,11 +489,10 @@ fun AddToCartSuccessDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(24.dp)
             ) {
-                // Ikon Centang Besar
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = Color(0xFF4CAF50), // Hijau Sukses
+                    tint = Color(0xFF4CAF50),
                     modifier = Modifier.size(72.dp)
                 )
 
@@ -539,7 +520,6 @@ fun AddToCartSuccessDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Tombol Lanjut Belanja (Outlined/Text)
                     OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
@@ -548,7 +528,6 @@ fun AddToCartSuccessDialog(
                         Text("Lanjut", color = MaterialTheme.colorScheme.primary)
                     }
 
-                    // Tombol Ke Keranjang (Primary Color)
                     Button(
                         onClick = onGoToCart,
                         modifier = Modifier.weight(1f),
@@ -730,20 +709,19 @@ fun AddReviewDialog(
     )
 }
 
-// [BARU] Kartu Informasi Penjual
 @Composable
 fun SellerInfoCard(
     sellerName: String,
     sellerPhotoUrl: String?,
     isVerified: Boolean,
     isFollowing: Boolean,
-    isSelf: Boolean, // Cek apakah ini toko sendiri
+    isSelf: Boolean,
     onFollowClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp), // Sesuaikan padding kiri-kanan
+            .padding(horizontal = 24.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp)
@@ -754,7 +732,6 @@ fun SellerInfoCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Foto Profil Penjual
             AsyncImage(
                 model = sellerPhotoUrl,
                 contentDescription = sellerName,
@@ -767,7 +744,6 @@ fun SellerInfoCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Nama & Status
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -794,7 +770,6 @@ fun SellerInfoCard(
                 )
             }
 
-            // Tombol Ikuti (Hanya jika bukan toko sendiri)
             if (!isSelf) {
                 Button(
                     onClick = onFollowClick,

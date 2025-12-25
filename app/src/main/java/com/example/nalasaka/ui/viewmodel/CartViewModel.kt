@@ -23,7 +23,6 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
 
     val totalPrice = MutableStateFlow(0)
 
-    // Helper untuk mengambil token secara sinkron di dalam coroutine
     private suspend fun getToken(): String {
         return repository.getUser().first().token
     }
@@ -62,7 +61,6 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    // Fungsi Checkout Utama
     fun checkoutCart(paymentMethod: String) {
         viewModelScope.launch {
             _checkoutState.value = UiState.Loading
@@ -72,7 +70,7 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
 
                 if (!response.error) {
                     _checkoutState.value = UiState.Success("Pesanan berhasil dibuat, Yang Mulia!")
-                    loadCart() // Kosongkan tampilan keranjang
+                    loadCart()
                 } else {
                     _checkoutState.value = UiState.Error(response.message)
                 }
@@ -103,7 +101,6 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    // [BARU] Reset state agar snackbar tidak muncul terus menerus saat rotasi layar
     fun resetAddToCartState() {
         _addToCartState.value = UiState.Idle
     }
@@ -127,10 +124,9 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
             try {
                 val response = repository.createTransaction(token, sakaId, qty, method, addr, sub, total, ship, lat, lng)
                 if (!response.error) {
-                    onSuccess() // Callback jika berhasil
+                    onSuccess()
                 }
             } catch (e: Exception) {
-                // Handle error
             }
         }
     }

@@ -1,5 +1,3 @@
-// app/src/main/java/com/example/nalasaka/ui/screen/home/HomeScreen.kt
-
 package com.example.nalasaka.ui.screen.home
 
 import androidx.compose.foundation.Image
@@ -65,7 +63,6 @@ fun HomeScreen(
             contentPadding = PaddingValues(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. HEADER (Banner Promo & Search Bar)
             item {
                 HomeHeader(
                     searchText = searchText,
@@ -74,7 +71,6 @@ fun HomeScreen(
                 )
             }
 
-            // Tampilkan Loading/Error State
             item {
                 when (val state = sakaState) {
                     UiState.Idle, UiState.Loading -> Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -86,7 +82,6 @@ fun HomeScreen(
             }
 
             if (listSaka.isNotEmpty()) {
-                // 2. Kategori Produk (Promo Terbaik Minggu Ini)
                 item {
                     ProductCategorySection(
                         title = "Promo Terbaik Minggu Ini",
@@ -95,7 +90,6 @@ fun HomeScreen(
                     )
                 }
 
-                // 3. Kategori Produk (Flash Sale)
                 item {
                     ProductCategorySection(
                         title = "Flash Sale",
@@ -116,23 +110,19 @@ fun HomeHeader(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        // --- BAGIAN BANNER PROMO ---
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
         ) {
-            // Background Image Banner
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_background), // GANTI DENGAN banner_promo
+                painter = painterResource(id = R.drawable.ic_launcher_background),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
 
-            // Background Overlay (Agar teks lebih terbaca)
             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)))
 
-            // Konten Teks Promo
             Column(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -159,7 +149,7 @@ fun HomeHeader(
                     lineHeight = 28.sp
                 )
                 Button(
-                    onClick = { /* Arahkan ke kategori Buah */ },
+                    onClick = {},
                     colors = ButtonDefaults.buttonColors(containerColor = BurntOrangeish),
                     modifier = Modifier.padding(top = 12.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -170,7 +160,6 @@ fun HomeHeader(
             }
         }
 
-        // --- BAGIAN SEARCH BAR (Di bawah Banner) ---
         Box(modifier = Modifier.padding(16.dp)) {
             OutlinedTextField(
                 value = searchText,
@@ -206,7 +195,7 @@ fun ProductCategorySection(
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.Black
             )
-            TextButton(onClick = { /* Lihat Semua */ }) {
+            TextButton(onClick = { }) {
                 Text("Lihat Semua", color = BurntOrangeish)
             }
         }
@@ -271,7 +260,6 @@ fun SakaCardHorizontal(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Logika Harga Coret di Card Horizontal
             if (saka.discountPrice != null && saka.discountPrice > 0) {
                 Text(
                     text = formatRupiah(saka.discountPrice),

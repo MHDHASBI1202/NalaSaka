@@ -31,7 +31,7 @@ fun WishlistScreen(
 ) {
     val wishlistState by viewModel.wishlistState.collectAsState()
 
-    // Load data setiap kali layar dibuka
+
     LaunchedEffect(Unit) {
         viewModel.loadWishlist()
     }
@@ -57,7 +57,7 @@ fun WishlistScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF7F0E6)) // Warna background soft
+                .background(Color(0xFFF7F0E6))
         ) {
             when (val state = wishlistState) {
                 is UiState.Loading -> {
@@ -65,20 +65,17 @@ fun WishlistScreen(
                 }
                 is UiState.Success -> {
                     if (state.data.isEmpty()) {
-                        // [UPDATE] Bagian ini dibuat clickable
                         Column(
                             modifier = Modifier
                                 .align(Alignment.Center)
                                 .clickable {
-                                    // Navigasi ke Halaman Produk
                                     navController.navigate(Screen.Produk.route) {
-                                        // Opsional: Atur stack agar kembali ke Home jika di-back
                                         popUpTo(Screen.Home.route) { saveState = true }
                                         launchSingleTop = true
                                         restoreState = true
                                     }
                                 }
-                                .padding(16.dp), // Padding agar area sentuh lebih luas
+                                .padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
@@ -90,7 +87,7 @@ fun WishlistScreen(
                             Text(
                                 text = "Yuk, cari produk kesukaanmu!",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary, // Warna Primary agar terlihat clickable
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }

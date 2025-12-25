@@ -19,27 +19,21 @@ import java.io.File
 
 class DetailViewModel(private val repository: UserRepository) : ViewModel() {
 
-    // State untuk Detail Produk
     private val _sakaDetailState = MutableStateFlow<UiState<SakaItem>>(UiState.Idle)
     val sakaDetailState: StateFlow<UiState<SakaItem>> = _sakaDetailState.asStateFlow()
 
-    // State untuk Produk Terkait
     private val _relatedProductsState = MutableStateFlow<UiState<List<SakaItem>>>(UiState.Idle)
     val relatedProductsState: StateFlow<UiState<List<SakaItem>>> = _relatedProductsState.asStateFlow()
 
-    // State untuk Data Review (List, Rating Rata2, Total)
     private val _reviewState = MutableStateFlow<UiState<ReviewData>>(UiState.Idle)
     val reviewState: StateFlow<UiState<ReviewData>> = _reviewState.asStateFlow()
 
-    // State untuk proses pengiriman Review (Success/Error msg)
     private val _submitReviewState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val submitReviewState: StateFlow<UiState<String>> = _submitReviewState.asStateFlow()
 
-    // [BARU] State Status Wishlist (Boolean: true jika disukai, false jika tidak)
     private val _isWishlist = MutableStateFlow<Boolean>(false)
     val isWishlist: StateFlow<Boolean> = _isWishlist.asStateFlow()
 
-    // Fungsi Memuat Detail Produk Lengkap
     fun loadSakaDetail(sakaId: String) {
         viewModelScope.launch {
             _sakaDetailState.value = UiState.Loading
@@ -49,12 +43,10 @@ class DetailViewModel(private val repository: UserRepository) : ViewModel() {
             try {
                 val user = repository.getUser().first()
                 if (user.isLogin) {
-                    // 1. Load Detail Produk
                     val response = repository.getDetailSaka(user.token, sakaId)
                     if (!response.error) {
                         _sakaDetailState.value = UiState.Success(response.saka)
 
-                        // 2. Load Related Products
                         val allSakaResponse = repository.getAllSaka(user.token)
                         if (!allSakaResponse.error) {
                             val allProducts = allSakaResponse.listSaka
@@ -62,10 +54,8 @@ class DetailViewModel(private val repository: UserRepository) : ViewModel() {
                             _relatedProductsState.value = UiState.Success(related)
                         }
 
-                        // 3. Load Reviews
                         loadReviews(user.token, sakaId)
 
-                        // 4. [AUTO CHECK] Cek status wishlist juga saat load detail
                         checkWishlistStatus(sakaId)
 
                     } else {
@@ -80,7 +70,6 @@ class DetailViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    // Fungsi helper privat refresh review
     private suspend fun loadReviews(token: String, sakaId: String) {
         try {
             val response = repository.getProductReviews(token, sakaId)
@@ -94,7 +83,6 @@ class DetailViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
-    // Fungsi Kirim Review
     fun submitReview(sakaId: String, rating: Int, comment: String, imageFile: File?) {
         viewModelScope.launch {
             _submitReviewState.value = UiState.Loading
@@ -115,7 +103,6 @@ class DetailViewModel(private val repository: UserRepository) : ViewModel() {
 
                     if (!response.error) {
                         _submitReviewState.value = UiState.Success("Ulasan terkirim!")
-                        // Reload data review agar list terupdate
                         loadReviews(user.token, sakaId)
                     } else {
                         _submitReviewState.value = UiState.Error(response.message)
@@ -131,9 +118,6 @@ class DetailViewModel(private val repository: UserRepository) : ViewModel() {
         _submitReviewState.value = UiState.Idle
     }
 
-    // --- FITUR WISHLIST ---
-
-    // Fungsi Cek Status Wishlist Awal (Dipanggil di UI LaunchedEffect)
     fun checkWishlistStatus(sakaId: String) {
         viewModelScope.launch {
             try {
@@ -143,33 +127,27 @@ class DetailViewModel(private val repository: UserRepository) : ViewModel() {
                     _isWishlist.value = response.isWishlist
                 }
             } catch (e: Exception) {
-                // Ignore error check, default false is fine
             }
         }
     }
 
-    // Fungsi Toggle (Klik Tombol Love)
     fun toggleWishlist(sakaId: String) {
         viewModelScope.launch {
             try {
                 val user = repository.getUser().first()
                 if (user.isLogin) {
-                    // Optimistic UI Update: Ubah icon langsung sebelum request selesai agar responsif
                     val oldState = _isWishlist.value
                     _isWishlist.value = !oldState
 
                     val response = repository.toggleWishlist(user.token, sakaId)
 
-                    // Sinkronisasi data server (memastikan status benar sesuai respon backend)
                     if (!response.error) {
                         _isWishlist.value = response.isWishlist
                     } else {
-                        // Jika server error, kembalikan ke state awal
                         _isWishlist.value = oldState
                     }
                 }
             } catch (e: Exception) {
-                // Jika koneksi gagal, kembalikan ke state semula (karena optimistic update)
                 _isWishlist.value = !_isWishlist.value
             }
         }
@@ -178,37 +156,32 @@ class DetailViewModel(private val repository: UserRepository) : ViewModel() {
     private val _isFollowing = MutableStateFlow(false)
     val isFollowing: StateFlow<Boolean> = _isFollowing.asStateFlow()
 
-    // Cek apakah user sudah follow seller dari produk ini
     fun checkFollowStatus(sellerId: String) {
         viewModelScope.launch {
             try {
                 val user = repository.getUser().first()
-                if (user.isLogin && sellerId != user.userId) { // Gak bisa follow diri sendiri
+                if (user.isLogin && sellerId != user.userId) {
                     val response = repository.checkFollowStatus(user.token, sellerId)
                     _isFollowing.value = response.isFollowing
                 }
-            } catch (e: Exception) { /* Silent fail */ }
+            } catch (e: Exception) { }
         }
     }
 
-    // Aksi Klik Tombol Follow
     fun toggleFollow(sellerId: String) {
         viewModelScope.launch {
             try {
                 val user = repository.getUser().first()
                 if (user.isLogin) {
-                    // Optimistic Update UI
                     _isFollowing.value = !_isFollowing.value
 
                     val response = repository.toggleFollow(user.token, sellerId)
 
-                    // Sinkronisasi dengan respon server
                     if (!response.error) {
                         _isFollowing.value = response.isFollowing
                     }
                 }
             } catch (e: Exception) {
-                // Revert jika gagal
                 _isFollowing.value = !_isFollowing.value
             }
         }

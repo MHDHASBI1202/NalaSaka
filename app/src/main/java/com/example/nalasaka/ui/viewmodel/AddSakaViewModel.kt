@@ -20,43 +20,36 @@ class AddSakaViewModel(private val repository: UserRepository) : ViewModel() {
     private val _uploadState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val uploadState: StateFlow<UiState<String>> = _uploadState.asStateFlow()
 
-    /**
-     * Mengunggah produk baru ke server dengan dukungan harga diskon
-     */
+
     fun uploadSaka(
         imageFile: File,
         name: String,
         category: String,
         description: String,
         price: Int,
-        discountPrice: Int?, // Parameter Diskon Baru
+        discountPrice: Int?,
         stock: Int
     ) {
         viewModelScope.launch {
             _uploadState.value = UiState.Loading
             try {
-                // Ambil sesi user terbaru
                 val user = repository.getUser().first()
                 if (!user.isLogin) {
                     _uploadState.value = UiState.Error("Sesi berakhir, silakan login kembali.")
                     return@launch
                 }
 
-                // Siapkan File Gambar
                 val requestImageFile = imageFile.asRequestBody("image/jpeg".toMediaType())
                 val imageMultipart = MultipartBody.Part.createFormData("photo", imageFile.name, requestImageFile)
 
-                // Siapkan Body Request
                 val nameReq = name.toRequestBody("text/plain".toMediaType())
                 val catReq = category.toRequestBody("text/plain".toMediaType())
                 val descReq = description.toRequestBody("text/plain".toMediaType())
                 val priceReq = price.toString().toRequestBody("text/plain".toMediaType())
                 val stockReq = stock.toString().toRequestBody("text/plain".toMediaType())
 
-                // Logic Diskon: Jika null, jangan kirim body atau kirim null
                 val discountReq = discountPrice?.toString()?.toRequestBody("text/plain".toMediaType())
 
-                // Eksekusi Unggah ke Repository
                 val response = repository.addNewSaka(
                     token = user.token,
                     file = imageMultipart,
@@ -64,7 +57,7 @@ class AddSakaViewModel(private val repository: UserRepository) : ViewModel() {
                     category = catReq,
                     description = descReq,
                     price = priceReq,
-                    discountPrice = discountReq, // Parameter baru di Repository
+                    discountPrice = discountReq,
                     stock = stockReq
                 )
 
