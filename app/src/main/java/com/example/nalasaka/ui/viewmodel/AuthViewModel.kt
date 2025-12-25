@@ -104,6 +104,18 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
+    fun claimPromo() {
+        viewModelScope.launch {
+            repository.claimPromo()
+        }
+    }
+
+    fun markPromoAsUsed() {
+        viewModelScope.launch {
+            repository.markPromoAsUsed()
+        }
+    }
+
     fun resetState() {
         _forgotState.value = UiState.Idle
         _resetPassState.value = UiState.Idle

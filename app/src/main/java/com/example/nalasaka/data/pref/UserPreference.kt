@@ -19,6 +19,8 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
     private val TOKEN_KEY = stringPreferencesKey("token")
     private val IS_LOGIN_KEY = booleanPreferencesKey("is_login")
     private val ROLE_KEY = stringPreferencesKey("role")
+    private val IS_PROMO_CLAIMED_KEY = booleanPreferencesKey("is_promo_claimed")
+    private val IS_PROMO_USED_KEY = booleanPreferencesKey("is_promo_used")
 
     fun getUser(): Flow<UserModel> {
         return dataStore.data.map { preferences ->
@@ -27,7 +29,9 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
                 preferences[NAME_KEY] ?: "",
                 preferences[TOKEN_KEY] ?: "",
                 preferences[IS_LOGIN_KEY] ?: false,
-                preferences[ROLE_KEY] ?: "customer"
+                preferences[ROLE_KEY] ?: "customer",
+
+
             )
         }
     }
@@ -39,6 +43,21 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
             preferences[TOKEN_KEY] = user.token
             preferences[IS_LOGIN_KEY] = true
             preferences[ROLE_KEY] = user.role
+            preferences[IS_PROMO_CLAIMED_KEY] = user.isPromoClaimed
+            preferences[IS_PROMO_USED_KEY] = user.isPromoUsed
+        }
+    }
+
+    suspend fun claimPromo() {
+        dataStore.edit { preferences ->
+            preferences[IS_PROMO_CLAIMED_KEY] = true
+        }
+    }
+
+    suspend fun markPromoAsUsed() {
+        dataStore.edit { preferences ->
+            preferences[IS_PROMO_CLAIMED_KEY] = false
+            preferences[IS_PROMO_USED_KEY] = true
         }
     }
 
@@ -49,6 +68,8 @@ class UserPreference private constructor(private val dataStore: DataStore<Prefer
             preferences[TOKEN_KEY] = ""
             preferences[IS_LOGIN_KEY] = false
             preferences[ROLE_KEY] = "customer"
+            preferences[IS_PROMO_CLAIMED_KEY] ?: false
+            preferences[IS_PROMO_USED_KEY] ?: false
         }
     }
 

@@ -1,5 +1,6 @@
 package com.example.nalasaka.ui.screen.home
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,6 +9,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -17,13 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.nalasaka.R
@@ -41,10 +45,13 @@ fun HomeScreen(
     authViewModel: AuthViewModel,
     viewModel: HomeViewModel
 ) {
+    val context = LocalContext.current
     val sakaState by viewModel.sakaState.collectAsState()
     val userModel by authViewModel.userSession.collectAsState(
         initial = com.example.nalasaka.data.pref.UserModel("", "", "", false)
     )
+
+    var showPromoDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(userModel.isLogin) {
         if (userModel.isLogin) {
@@ -67,7 +74,18 @@ fun HomeScreen(
                 HomeHeader(
                     searchText = searchText,
                     onSearchTextChange = { searchText = it },
-                    onSearch = { navController.navigate(Screen.Produk.route) }
+                    onSearch = { navController.navigate(Screen.Produk.route) },
+                    onBannerClick = {
+                        if (userModel.isPromoUsed) {
+                            Toast.makeText(context, "Mohon maaf Yang Mulia, promo ini sudah Anda gunakan dan telah hangus.", Toast.LENGTH_LONG).show()
+                        } else if (userModel.isPromoClaimed) {
+                            Toast.makeText(context, "Promo aktif! Diskon akan otomatis terpasang saat Yang Mulia checkout.", Toast.LENGTH_LONG).show()
+                        } else {
+                            showPromoDialog = true
+                        }
+                    },
+                    isPromoClaimed = userModel.isPromoClaimed,
+                    isPromoUsed = userModel.isPromoUsed
                 )
             }
 
@@ -99,6 +117,43 @@ fun HomeScreen(
                 }
             }
         }
+
+        if (showPromoDialog) {
+            AlertDialog(
+                onDismissRequest = { showPromoDialog = false },
+                title = { Text("🎉 Klaim Promo Spesial!") },
+                text = {
+                    Column {
+                        Text("Selamat Yang Mulia!")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Anda berhak mendapatkan potongan langsung sebesar:")
+                        Text(
+                            "Rp 20.000",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = BurntOrangeish,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text("Untuk transaksi berikutnya.")
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            authViewModel.claimPromo()
+                            showPromoDialog = false
+                        }
+                    ) {
+                        Text("Klaim Sekarang", color = BurntOrangeish)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPromoDialog = false }) {
+                        Text("Nanti Saja", color = Color.Gray)
+                    }
+                },
+                containerColor = Color.White
+            )
+        }
     }
 }
 
@@ -107,16 +162,20 @@ fun HomeHeader(
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     onSearch: () -> Unit,
+    onBannerClick: () -> Unit,
+    isPromoClaimed: Boolean,
+    isPromoUsed: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
+            .clickable { onBannerClick() }
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_background),
-                contentDescription = null,
+                painter = painterResource(id = R.drawable.banner),
+                contentDescription = "Promo Banner",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
@@ -128,34 +187,75 @@ fun HomeHeader(
                     .align(Alignment.CenterStart)
                     .padding(24.dp)
             ) {
-                Surface(
-                    color = Color.Red,
-                    shape = RoundedCornerShape(4.dp)
-                ) {
+                if (isPromoUsed) {
+                    Surface(
+                        color = Color.Gray,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            "SUDAH DIGUNAKAN",
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "DISKON USER BARU",
+                        "Promo Telah\nAnda Manfaatkan",
                         color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 22.sp,
+                        lineHeight = 28.sp
                     )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "Potongan Rp 20.000\nUntuk Semua Buah!",
-                    color = Color.White,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 22.sp,
-                    lineHeight = 28.sp
-                )
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = BurntOrangeish),
-                    modifier = Modifier.padding(top = 12.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Klaim Sekarang", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                } else if (isPromoClaimed) {
+                    Surface(
+                        color = Color.Green,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            "PROMO AKTIF",
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Diskon Rp 20.000\nSiap Digunakan!",
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 22.sp,
+                        lineHeight = 28.sp
+                    )
+                } else {
+                    Surface(
+                        color = Color.Red,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            "DISKON USER BARU",
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Potongan Rp 20.000\nUntuk Semua Buah!",
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 22.sp,
+                        lineHeight = 28.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "(Ketuk banner untuk klaim)",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 12.sp
+                    )
                 }
             }
         }
@@ -165,10 +265,20 @@ fun HomeHeader(
                 value = searchText,
                 onValueChange = onSearchTextChange,
                 placeholder = { Text("Cari sayur atau buah segar...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                leadingIcon = {
+                    IconButton(onClick = onSearch) {
+                        Icon(Icons.Default.Search, contentDescription = "Cari")
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        onSearch()
+                    }
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,

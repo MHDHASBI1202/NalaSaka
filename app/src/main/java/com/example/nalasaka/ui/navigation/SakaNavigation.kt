@@ -1,6 +1,5 @@
 package com.example.nalasaka.ui.navigation
 
-import CheckoutScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -20,6 +19,7 @@ import com.example.nalasaka.ui.screen.profile.EditProfileScreen
 import com.example.nalasaka.ui.screen.history.TransactionHistoryScreen
 import com.example.nalasaka.ui.screen.profile.VerifySellerScreen
 import com.example.nalasaka.ui.screen.seller.SellerDashboardScreen
+import com.example.nalasaka.ui.screen.checkout.CheckoutScreen
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nalasaka.ui.screen.seller.SellerInventoryScreen

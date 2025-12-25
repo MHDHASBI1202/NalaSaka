@@ -1,4 +1,12 @@
+package com.example.nalasaka.ui.screen.checkout
+
+import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -6,13 +14,29 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -21,81 +45,51 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.navigation.NavHostController
-import com.example.nalasaka.ui.components.PrimaryButton
-import com.google.android.gms.location.LocationServices
-import android.Manifest
-import android.content.Intent
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddLocation
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Storefront
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.nalasaka.data.remote.response.CartItem
+import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
+import com.example.nalasaka.data.pref.UserModel
+import com.example.nalasaka.ui.components.PrimaryButton
 import com.example.nalasaka.ui.components.formatRupiah
+import com.example.nalasaka.ui.navigation.Screen
+import com.example.nalasaka.ui.viewmodel.AuthViewModel
 import com.example.nalasaka.ui.viewmodel.CartViewModel
 import com.example.nalasaka.ui.viewmodel.UiState
 import com.example.nalasaka.ui.viewmodel.ViewModelFactory
-import android.location.Geocoder
-import android.net.Uri
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import coil.compose.AsyncImage
-import com.example.nalasaka.ui.navigation.Screen
+import com.google.android.gms.location.LocationServices
 import java.util.Locale
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutScreen(
     navController: NavHostController,
     subtotal: Int,
-    cartViewModel: CartViewModel = viewModel(factory = ViewModelFactory.getInstance(LocalContext.current))
+    cartViewModel: CartViewModel = viewModel(factory = ViewModelFactory.getInstance(LocalContext.current)),
+    authViewModel: AuthViewModel = viewModel(factory = ViewModelFactory.getInstance(LocalContext.current))
 ) {
     val context = LocalContext.current
     val cartState by cartViewModel.cartState.collectAsState()
     val checkoutState by cartViewModel.checkoutState.collectAsState()
+
+    val userModel by authViewModel.userSession.collectAsState(initial = UserModel("","","", false))
+    val userToken = userModel.token
+
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     val groupedItems = remember(cartState) {
@@ -103,15 +97,9 @@ fun CheckoutScreen(
             (cartState as UiState.Success).data.groupBy { it.storeName ?: "Toko Tidak Dikenal" }
         } else emptyMap()
     }
-    val profileViewModel: com.example.nalasaka.ui.viewmodel.ProfileViewModel = viewModel(factory = ViewModelFactory.getInstance(context))
-    val userProfile by profileViewModel.profileState.collectAsState()
-    val userTokenState by cartViewModel.getUser().collectAsState(initial = null)
-    val userToken = userTokenState?.token ?: ""
 
     var savedAddress by remember { mutableStateOf("") }
-    var tempAddress by remember { mutableStateOf("") }
     var showAddressDialog by remember { mutableStateOf(false) }
-    var isEditingTempAddress by remember { mutableStateOf(false) }
 
     var shippingType by remember { mutableStateOf("Diantar") }
     val shippingMethods = listOf(Pair("Reguler", 10000), Pair("Kilat", 20000))
@@ -257,16 +245,14 @@ fun CheckoutScreen(
                         if (shippingType == "Ambil ke Toko") {
                             val storeLat = items.first().latitude
                             val storeLng = items.first().longitude
-                            val storeName = items.first().storeName ?: "Toko"
-                            val fullAddress = items.first().storeAddress?: "Alamat tidak tersedia"
-
+                            val storeNameItem = items.first().storeName ?: "Toko"
 
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Card(
                                 onClick = {
                                     if (storeLat != null && storeLng != null) {
-                                        val gmmIntentUri = Uri.parse("geo:$storeLat,$storeLng?q=$storeLat,$storeLng($storeName)")
+                                        val gmmIntentUri = Uri.parse("geo:$storeLat,$storeLng?q=$storeLat,$storeLng($storeNameItem)")
                                         val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
                                         mapIntent.setPackage("com.google.android.apps.maps")
                                         context.startActivity(mapIntent)
@@ -337,18 +323,34 @@ fun CheckoutScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+
             val ongkir = if(shippingType == "Diantar") selectedCourier.second else 0
             val biayaJasa = if(shippingType == "Diantar") 1000 else 0
+
+            val discountAmount = if (userModel.isPromoClaimed) 20000 else 0
+
+            val grandTotal = (subtotal + ongkir + biayaJasa - discountAmount).coerceAtLeast(0)
 
             CostRow("Total Harga", formatRupiah(subtotal))
             if(shippingType == "Diantar") {
                 CostRow("Total Ongkos Kirim", formatRupiah(ongkir))
                 CostRow("Biaya Jasa Aplikasi", formatRupiah(biayaJasa))
             }
+
+            if (userModel.isPromoClaimed) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Diskon Promo", style = MaterialTheme.typography.bodyMedium)
+                    Text("- ${formatRupiah(discountAmount)}", style = MaterialTheme.typography.bodyMedium, color = Color.Green, fontWeight = FontWeight.Bold)
+                }
+            }
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Total Tagihan", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text(formatRupiah(subtotal + ongkir + biayaJasa), color = Color(0xFFE67E22), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(formatRupiah(grandTotal), color = Color(0xFFE67E22), fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -377,13 +379,16 @@ fun CheckoutScreen(
                                             method = selectedPayment,
                                             addr = finalAddr,
                                             sub = item.price * item.quantity,
-                                            total = subtotal + ongkir + biayaJasa,
+                                            total = grandTotal,
                                             ship = shippingType,
                                             lat = userLat,
                                             lng = userLng,
                                             onSuccess = {
                                                 completedCount++
                                                 if (completedCount == items.size) {
+                                                    if (userModel.isPromoClaimed) {
+                                                        authViewModel.markPromoAsUsed()
+                                                    }
                                                     Toast.makeText(context, "Pesanan Berhasil!", Toast.LENGTH_LONG).show()
                                                     navController.navigate(Screen.TransactionHistory.route) {
                                                         popUpTo(navController.graph.startDestinationId) {

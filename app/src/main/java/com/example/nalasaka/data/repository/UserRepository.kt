@@ -49,6 +49,14 @@ class UserRepository private constructor(
         return apiService.getDetailSaka("Bearer $token", sakaId)
     }
 
+    suspend fun claimPromo() {
+        userPreference.claimPromo()
+    }
+
+    suspend fun markPromoAsUsed() {
+        userPreference.markPromoAsUsed()
+    }
+
     suspend fun addNewSaka(
         token: String,
         file: MultipartBody.Part,

@@ -5,5 +5,7 @@ data class UserModel(
     val name: String,
     val token: String,
     val isLogin: Boolean = false,
-    val role: String = "customer"
+    val role: String = "customer",
+    val isPromoClaimed: Boolean = false,
+    val isPromoUsed: Boolean = false
 )
