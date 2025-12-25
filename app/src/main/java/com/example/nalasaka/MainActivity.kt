@@ -36,7 +36,8 @@ class MainActivity : ComponentActivity() {
             val repository = Injection.provideRepository(context)
             val userModel by repository.getUser().collectAsState(initial = null)
 
-                LaunchedEffect(userModel?.isLogin) {
+            // Indentasi diperbaiki: Sejajar dengan deklarasi variabel di atasnya
+            LaunchedEffect(userModel?.isLogin) {
                 if (userModel?.isLogin == true) {
                     FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                         if (task.isSuccessful) {
@@ -45,12 +46,14 @@ class MainActivity : ComponentActivity() {
                                 try {
                                     repository.updateFcmToken(userModel!!.token, token)
                                 } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
                             }
                         }
                     }
                 }
             }
+
             NalaSakaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
