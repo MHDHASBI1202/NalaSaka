@@ -301,24 +301,21 @@ fun SellerDashboardScreen(
                     title = "Pesanan Masuk",
                     icon = Icons.Default.Inventory,
                     modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("seller_orders_list") }
+                    onClick = {
+                        navController.navigate("seller_orders_list")
+                    }
                 )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-// Baris Kedua (Menu Baru untuk Broadcast)
-            Row(modifier = Modifier.fillMaxWidth()) {
                 SellerMenuCard(
                     title = "Siarkan Promo",
-                    icon = Icons.Default.Campaign, // Menggunakan ikon toa/kampanye
-                    modifier = Modifier.fillMaxWidth(0.5f), // Setengah lebar agar sejajar dengan atas
+                    icon = Icons.Default.Campaign,
+                    modifier = Modifier.weight(1f),
                     onClick = {
-                        // Panggil fungsi broadcast dari ViewModel
                         sellerViewModel.broadcastPromo()
                     }
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),

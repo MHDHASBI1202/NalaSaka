@@ -94,6 +94,7 @@ fun CheckoutScreen(
 ) {
     val context = LocalContext.current
     val cartState by cartViewModel.cartState.collectAsState()
+    val checkoutState by cartViewModel.checkoutState.collectAsState()
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     val groupedItems = remember(cartState) {
@@ -358,12 +359,16 @@ fun CheckoutScreen(
                 text = if(shippingType == "Diantar") "KONFIRMASI PESANAN" else "AMBIL KE TOKO",
                 onClick = {
                     val finalAddr = if(shippingType == "Diantar") savedAddress else "Ambil di Toko"
+
                     if(finalAddr.isEmpty() && shippingType == "Diantar") {
                         Toast.makeText(context, "Alamat belum diisi!", Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, "Pesanan diproses!", Toast.LENGTH_LONG).show()
+                        // MANGGIL FUNGSI CHECKOUT DARI VIEWMODEL
+                        // Parameter paymentMethod disesuaikan dengan dropdown (selectedPayment)
+                        cartViewModel.checkoutCart(selectedPayment)
                     }
-                }
+                },
+                isLoading = checkoutState is UiState.Loading // Tampilkan loading saat proses
             )
         }
     }

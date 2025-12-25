@@ -20,18 +20,20 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
     private val _addToCartState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val addToCartState: StateFlow<UiState<String>> = _addToCartState
 
-    // Hitung total harga lokal
     val totalPrice = MutableStateFlow(0)
 
-    val paymentMethod = MutableStateFlow("CASH")
+    // Helper untuk mengambil token secara sinkron di dalam coroutine
+    private suspend fun getToken(): String {
+        return repository.getUser().first().token
+    }
 
     fun loadCart() {
         viewModelScope.launch {
             _cartState.value = UiState.Loading
             try {
-                val user = repository.getUser().first()
-                if (user.isLogin) {
-                    val response = repository.getCart(user.token)
+                val token = getToken()
+                if (token.isNotEmpty()) {
+                    val response = repository.getCart(token)
                     if (!response.error) {
                         _cartState.value = UiState.Success(response.data)
                         calculateTotal(response.data)
@@ -52,45 +54,40 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
     fun updateQuantity(item: CartItem, newQty: Int) {
         viewModelScope.launch {
             try {
-                val user = repository.getUser().first()
-                repository.updateCartQty(user.token, item.cartId, newQty)
-                loadCart() // Refresh data
-            } catch (e: Exception) {
-                // Handle error silent
-            }
+                val token = getToken()
+                repository.updateCartQty(token, item.cartId, newQty)
+                loadCart()
+            } catch (e: Exception) { }
         }
     }
 
-    fun checkout() {
+    // Fungsi Checkout Utama
+    fun checkoutCart(paymentMethod: String) {
         viewModelScope.launch {
             _checkoutState.value = UiState.Loading
             try {
-                val user = repository.getUser().first()
-                val response = repository.checkoutCart(user.token, paymentMethod.value)
+                val token = getToken()
+                val response = repository.checkoutCart(token, paymentMethod)
+
                 if (!response.error) {
-                    _checkoutState.value = UiState.Success(response.message)
-                    loadCart() // Keranjang jadi kosong
+                    _checkoutState.value = UiState.Success("Pesanan berhasil dibuat, Yang Mulia!")
+                    loadCart() // Kosongkan tampilan keranjang
                 } else {
                     _checkoutState.value = UiState.Error(response.message)
                 }
             } catch (e: Exception) {
-                _checkoutState.value = UiState.Error(e.message ?: "Checkout gagal")
+                _checkoutState.value = UiState.Error(e.message ?: "Terjadi kesalahan")
             }
         }
     }
 
-    fun resetCheckoutState() {
-        _checkoutState.value = UiState.Idle
-    }
-
-    // Fungsi Add to Cart untuk dipanggil dari Detail Screen
     fun addToCartFromDetail(sakaId: String) {
         viewModelScope.launch {
-            _addToCartState.value = UiState.Loading // Set status loading
+            _addToCartState.value = UiState.Loading
             try {
-                val user = repository.getUser().first()
-                if(user.isLogin) {
-                    val response = repository.addToCart(user.token, sakaId, 1)
+                val token = getToken()
+                if(token.isNotEmpty()) {
+                    val response = repository.addToCart(token, sakaId, 1)
                     if (!response.error) {
                         _addToCartState.value = UiState.Success("Berhasil ditambahkan ke keranjang")
                     } else {
@@ -100,13 +97,11 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
                     _addToCartState.value = UiState.Error("Silakan login terlebih dahulu")
                 }
             } catch (e: Exception) {
-                _addToCartState.value = UiState.Error(e.message ?: "Gagal menambahkan ke keranjang")
+                _addToCartState.value = UiState.Error(e.message ?: "Gagal menambahkan")
             }
         }
     }
 
-    // [BARU] Reset state agar snackbar tidak muncul terus menerus saat rotasi layar
-    fun resetAddToCartState() {
-        _addToCartState.value = UiState.Idle
-    }
+    fun resetCheckoutState() { _checkoutState.value = UiState.Idle }
+    fun resetAddToCartState() { _addToCartState.value = UiState.Idle }
 }
