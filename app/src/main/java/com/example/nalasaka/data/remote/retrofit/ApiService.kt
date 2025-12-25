@@ -13,6 +13,7 @@ import com.example.nalasaka.data.remote.response.TransactionHistoryResponse
 import com.example.nalasaka.data.remote.response.WishlistResponse
 import com.example.nalasaka.data.remote.response.OrderItem
 import com.example.nalasaka.data.remote.response.ResponseStore
+import com.example.nalasaka.data.remote.response.TransactionResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
@@ -84,7 +85,20 @@ interface ApiService {
         @Query("user_id") userId: String
     ): TransactionHistoryResponse
 
-    // Di Transaction Store (Pesan Ulang)
+
+    @FormUrlEncoded
+    @POST("transactions")
+    suspend fun createTransaction(
+        @Header("Authorization") token: String,
+        @Field("saka_id") sakaId: Int,
+        @Field("quantity") quantity: Int,
+        @Field("payment_method") paymentMethod: String,
+        @Field("full_address") fullAddress: String,
+        @Field("subtotal") subtotal: Int,
+        @Field("total_price") totalAmount: Int,
+        @Field("shipping_method") shippingMethod: String
+    ): TransactionResponse
+
     @FormUrlEncoded
     @POST("transactions")
     suspend fun checkoutTransaction(

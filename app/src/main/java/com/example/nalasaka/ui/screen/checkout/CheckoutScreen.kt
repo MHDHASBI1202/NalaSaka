@@ -82,6 +82,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import com.example.nalasaka.ui.navigation.Screen
 import java.util.Locale
 
 
@@ -102,6 +103,11 @@ fun CheckoutScreen(
             (cartState as UiState.Success).data.groupBy { it.storeName ?: "Toko Tidak Dikenal" }
         } else emptyMap()
     }
+    val profileViewModel: com.example.nalasaka.ui.viewmodel.ProfileViewModel = viewModel(factory = ViewModelFactory.getInstance(context))
+    val userProfile by profileViewModel.profileState.collectAsState()
+    val userTokenState by cartViewModel.getUser().collectAsState(initial = null)
+    val userToken = userTokenState?.token ?: ""
+
     var savedAddress by remember { mutableStateOf("") } // Alamat Utama (Dari GPS/Manual Pop-up)
     var tempAddress by remember { mutableStateOf("") }  // Alamat Sementara (Manual di Layar)
     var showAddressDialog by remember { mutableStateOf(false) }
@@ -363,6 +369,33 @@ fun CheckoutScreen(
                     if(finalAddr.isEmpty() && shippingType == "Diantar") {
                         Toast.makeText(context, "Alamat belum diisi!", Toast.LENGTH_SHORT).show()
                     } else {
+                        // Cek apakah data keranjang berhasil dimuat
+                        if (cartState is UiState.Success) {
+                            val items = (cartState as UiState.Success).data
+
+                            // LOOPING: Karena checkout dari Cart, kita proses tiap barang
+                            items.forEachIndexed { index, item ->
+                                cartViewModel.processCheckout(
+                                    token = userToken,
+                                    sakaId = item.sakaId.toInt(), // Ambil ID produk dari item cart
+                                    qty = item.quantity,      // Ambil Qty dari item cart
+                                    method = selectedPayment, // Gunakan state selectedPayment
+                                    addr = finalAddr,
+                                    sub = item.price * item.quantity,
+                                    total = subtotal + ongkir + biayaJasa,
+                                    ship = shippingType,
+                                    onSuccess = {
+                                        // Jika ini item terakhir yang diproses, baru pindah halaman
+                                        if (index == items.size - 1) {
+                                            Toast.makeText(context, "Pesanan Berhasil!", Toast.LENGTH_LONG).show()
+                                            navController.navigate(Screen.TransactionHistory.route) {
+                                                popUpTo(Screen.Cart.route) { inclusive = true }
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
                         // MANGGIL FUNGSI CHECKOUT DARI VIEWMODEL
                         // Parameter paymentMethod disesuaikan dengan dropdown (selectedPayment)
                         cartViewModel.checkoutCart(selectedPayment)

@@ -176,6 +176,27 @@ class UserRepository private constructor(
         return apiService.updateStoreLocation(token, address, lat, lng)
     }
 
+    suspend fun createTransaction(
+        token: String,
+        sakaId: Int,
+        quantity: Int,
+        paymentMethod: String,
+        fullAddress: String,
+        subtotal: Int,
+        totalAmount: Int,
+        shippingMethod: String
+    ): TransactionResponse {
+        return apiService.createTransaction(
+            "Bearer $token",
+            sakaId,
+            quantity,
+            paymentMethod,
+            fullAddress,
+            subtotal,
+            totalAmount,
+            shippingMethod
+        )
+    }
 
     companion object {
         @Volatile

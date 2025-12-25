@@ -153,6 +153,18 @@ data class CheckoutResponse(
     val transactionId: Int? = null
 )
 
+data class TransactionResponse(
+    @field:SerializedName("error")
+    val error: Boolean,
+
+    @field:SerializedName("message")
+    val message: String,
+
+    // Anda bisa menambahkan field transaction jika ingin mengambil data balik dari API
+    @field:SerializedName("transaction")
+    val transaction: Any? = null
+)
+
 // Data class untuk Detail Profil Pengguna
 data class ProfileData(
     @field:SerializedName("userId")

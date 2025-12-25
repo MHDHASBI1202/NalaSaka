@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+
 class CartViewModel(private val repository: UserRepository) : ViewModel() {
 
     private val _cartState = MutableStateFlow<UiState<List<CartItem>>>(UiState.Idle)
@@ -102,6 +103,34 @@ class CartViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
+    // [BARU] Reset state agar snackbar tidak muncul terus menerus saat rotasi layar
+    fun resetAddToCartState() {
+        _addToCartState.value = UiState.Idle
+    }
+
+    fun getUser() = repository.getUser()
+
+    fun processCheckout(
+        token: String,
+        sakaId: Int,
+        qty: Int,
+        method: String,
+        addr: String,
+        sub: Int,
+        total: Int,
+        ship: String,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val response = repository.createTransaction(token, sakaId, qty, method, addr, sub, total, ship)
+                if (!response.error) {
+                    onSuccess() // Callback jika berhasil
+                }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
     fun resetCheckoutState() { _checkoutState.value = UiState.Idle }
-    fun resetAddToCartState() { _addToCartState.value = UiState.Idle }
-}
+    }
